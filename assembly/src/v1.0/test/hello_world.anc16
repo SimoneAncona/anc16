@@ -1,6 +1,7 @@
 message: "Hello, World!"
 len: $
 
+org 0x4000
 _code:
 	ldi # message
 	ldb len
