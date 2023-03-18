@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>AN16 Emulator</title>
+	<link rel="stylesheet" href="../common/style.css" type="text/css">
+	<script src="scr.js"></script>
+	<script src="../common/common.js" defer></script>
+</head>
+<body>
+	<nav>
+		<div id="tab">
+			<h1>ANC16 docs</h1>
+			<h2 class="interactive">Doc</h2>
+			<h2 class="interactive" onclick="goto('../assembly/index.html')">Assembly</h2>
+			<h2 class="interactive" onclick="goto('../assembler/index.html')">Assembler</h2>
+			<h2 class="interactive selected">Emulator</h2>
+		</div>
+		<div id="options">
+			<h2>Theme</h2>
+			<select class="interactive" id="theme">
+				<option value="light">Light</option>
+				<option value="dark">Dark</option>
+			</select>
+		</div>
+	</nav>
+	<div id="title">
+		<h1>Emulator</h1>
+	</div>
+	<main>
+		<h1>Introduction</h1>
+		<p>
+			ANC16 emulator using ANC OS as operative system.
+			<br>
+			IO Device mapping:
+		</p>
+		<ul>
+			&Tab;		included - included
+			<li>
+				<strong>0x0000 - 0x1FFF</strong> Opertive system + swap memory
+			</li>
+			<li>
+				<strong>0x2000 - 0x2FEF</strong> Char map <a href="../details/charmap.html">Click here for more information</a>
+			</li>
+			<li>
+				<strong>0x2FF0 - 0x2FF1</strong> Keyboard and mouse respectively
+			</li>
+			<li>
+				<strong>0x2FF2 - 0x40FF</strong> Applications
+			</li>
+			<li>
+				<strong>0x4100 - 0xE9BF</strong> Video memory (240 x 180 px, 256 colors) 
+			</li>
+			<li>
+				<strong>0xE9C0 - 0xFFFE</strong> External memory for general purposes
+			</li>
+			<li>
+				<strong>0xFFFF</strong> Indication lights
+			</li>
+		</ul>
+		<h1>Emulator</h1>
+		<div id="screen-box">
+			<canvas id="system-screen" width="240" height="180">Your browser does not support canvas rendering</canvas>
+		</div>
+		<div id="commands">
+			<h2 class="interactive" onclick="cpu.start()">Start</h2>
+			<h2 class="interactive" onclick="cpu.stop()">Stop</h2>
+			<h2 class="interactive" onclick="cpu.reset()">Reset</h2>
+			<h2 class="interactive" onclick="cpu.clear()">Clear</h2>
+			<h2>Speed:</h2>
+			<h2 class="interactive" onclick="cpu.updateFrq(cpu.BASEFREQMHZ / 100); removeSpeed(); this.classList.add('selected');">1%</h2>
+			<h2 class="interactive" onclick="cpu.updateFrq(cpu.BASEFREQMHZ / 10); removeSpeed(); this.classList.add('selected');">10%</h2>
+			<h2 class="interactive" onclick="cpu.updateFrq(cpu.BASEFREQMHZ / 4); removeSpeed(); this.classList.add('selected');">25%</h2>
+			<h2 class="interactive" onclick="cpu.updateFrq(cpu.BASEFREQMHZ / 2); removeSpeed(); this.classList.add('selected');">50%</h2>
+			<h2 class="interactive selected" onclick="cpu.updateFrq(cpu.BASEFREQMHZ / 1); removeSpeed(); this.classList.add('selected');">normal</h2>
+		</div>
+		<h2>Cpu</h2>
+		<div id="cpu-state">
+			<div id="sys-settings">
+				<h2 class="interactive" onclick="cpu.upload()">Upload ROM</h2>
+			</div>
+			<div id="gprs" class="cpu-info">
+				GPRs
+				<div class="info-grid">
+					<div id="AH">AH</div>
+					<div id="AL">AL</div>
+					<div id="A">A:</div>
+					<div id="reg-AH" class="reg">
+						<input class="reg-input" id="reg-input-ah" readonly>
+					</div>
+					<div id="reg-AL" class="reg">
+						<input class="reg-input" id="reg-input-al" readonly>
+					</div>
+
+					<div id="BH">BH</div>
+					<div id="BL">BL</div>
+					<div id="B">B:</div>
+					<div id="reg-BH" class="reg">
+						<input class="reg-input" id="reg-input-bh" readonly>
+					</div>
+					<div id="reg-BL" class="reg">
+						<input class="reg-input" id="reg-input-bl" readonly>
+					</div>
+
+					<div id="I">I:</div>
+					<div id="reg-I" class="reg">
+						<input class="reg-input" id="reg-input-i" readonly>
+					</div>
+					<div id="reg-unused" class="reg">
+						<input class="reg-input" readonly>
+					</div>
+
+					<div id="J">J:</div>
+					<div id="reg-J" class="reg">
+						<input class="reg-input" id="reg-input-j" readonly>
+					</div>
+				</div>
+			</div>
+			<div id="special-regs" class="cpu-info">
+				Special registers
+				<div class="info-grid">
+
+					<div id="PC">PC:</div>
+					<div id="reg-PC" class="reg">
+						<input class="reg-input" id="reg-input-pc" readonly>
+					</div>
+
+					<div id="IR">IR:</div>
+					<div id="reg-IR" class="reg">
+						<input class="reg-input" id="reg-input-ir" readonly>
+					</div>
+
+					<div id="SP">SP:</div>
+					<div id="reg-SP" class="reg">
+						<input class="reg-input" id="reg-input-sp" readonly>
+					</div>
+
+					<div id="SR">SR:</div>
+					<div id="reg-SR" class="reg">
+						<input class="reg-input" id="reg-input-sr" readonly>
+					</div>
+
+					<div id="DR">DR:</div>
+					<div id="reg-DR" class="reg">
+						<input class="reg-input" id="reg-input-dr" readonly>
+					</div>
+
+					<div id="MLI">MLI:</div>
+					<div id="reg-MLI" class="reg">
+						<input class="reg-input" id="reg-input-mli" readonly>
+					</div>
+
+					<div id="MHI">MHI:</div>
+					<div id="reg-MHI" class="reg">
+						<input class="reg-input" id="reg-input-mhi" readonly>
+					</div>
+				</div>
+			</div>
+			<div id="other" class="cpu-info">
+				Others info
+				<div class="info-grid">
+					<div id="clk">CLK:</div>
+					<div id="clk-info" class="reg">
+						<input class="reg-input" id="clk-input" readonly>
+					</div>
+				</div>
+			</div>
+		</div>		
+	</main>
+	<footer>
+		Author: Ancona Simone
+		<br>
+		Last update: 20/02/2023 (DD/MM/YYYY)
+	</footer>
+</body>
+</html>
