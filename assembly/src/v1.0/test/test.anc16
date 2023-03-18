@@ -23,6 +23,7 @@ endif
 org 0x3200
 func:
 	ada struct.nome
+	ada # sizeof _code
 	adb # word 10
 	reserve 20
 altra_func:

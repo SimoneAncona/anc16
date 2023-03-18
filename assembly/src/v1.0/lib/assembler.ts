@@ -19,7 +19,12 @@ LDAL __ref__
 SYS
 `;
 const STD_SYSCALLS = {
-	print: 2
+	exit: 0,
+	fread: 1,
+	fwrite: 2,
+	print: 3,
+	wait: 4,
+	listenKey: 5
 }
 
 type TokenType = "reserved" | "identifier" | "number" | "instruction" | "special" | "other" | "string" | "any";
@@ -81,10 +86,10 @@ export function assemble
 		sourceString: string,
 		moduleName = "_main",
 		options = {
+			useHeader: false,
 			zerosToCode: false,
-			setHeader: false,
 			setSymbolRef: false,
-			getSymbolRef: false,
+			symbolRefFile: false,
 			accessFileSystem: false,
 			accessVideoMem: false,
 			highPrivileges: false
@@ -96,25 +101,55 @@ export function assemble
 	console.time("Assembly finished in");
 	let lines = parse(sourceString, moduleName);
 	let labels = getLabels(lines);
-	let symbolRef: Array<{ name: string, address: number }> = [];
+	if (labels.length == 0) {
+		process.stdout.write("! ".yellow);
+		console.log("Empty source");
+		console.timeEnd("Assembly finished in");
+	}
+	let symbolRef: Array<{ symbol: string, address: Uint8Array }> = [];
+	let ref = "";
 
 	setData(labels);
 	for (let lb of labels) {
 		if (lb.address === "unresolved") unresolvedAddress(lb.name);
-		symbolRef.push({ name: lb.name, address: lb.address as number });
+		let addrTemp = new Uint8Array(2);
+		addrTemp[0] = lb.address as number >> 8;
+		addrTemp[1] = lb.address as number & 0x00FF;
+		symbolRef.push({ symbol: lb.name, address: addrTemp });
+		if (options.symbolRefFile) {
+			ref += "USE " + lb.name + " AS 0x" + (lb.address as number).toString(16).toUpperCase() + "\n";
+		}
 	}
 	setBinary(labels);
 
+	let bin = getBinary(labels);
+	if (options.useHeader) {
+		let headerSettings = new HeaderSetter()
+			.setAccessFileSystem(options.accessFileSystem)
+			.setAccessVideoMem(options.accessVideoMem)
+			.setHighPrivileges(options.highPrivileges)
+			.setVersion(1);
+
+		if (options.setSymbolRef)
+			headerSettings.setSymbolTable(symbolRef);
+
+		let header = headerSettings.generateHeader();
+
+		let tempBin = new Uint8Array(bin.length + header.length);
+		tempBin.set(header, 0);
+		tempBin.set(bin, header.length);
+		bin = tempBin;
+	}
+	if (options.zerosToCode) {
+		let zeros = new Uint8Array(labels[0].address as number);
+		let tempBin = new Uint8Array(bin.length + zeros.length);
+		tempBin.set(zeros, 0);
+		tempBin.set(bin, zeros.length);
+		bin = tempBin
+	}
 	process.stdout.write("✓ ".green);
 	console.timeEnd("Assembly finished in");
-	// let bin = getBinary(lables);
-	let header = new HeaderSetter()
-		.setAccessFileSystem(options.accessFileSystem)
-		.setAccessVideoMem(options.accessVideoMem)
-		.setHighPrivileges(options.highPrivileges)
-		.setVersion(1)
-		.generateHeader()
-	return { bin: new Uint8Array(), ref: "" };
+	return { bin: bin, ref: ref };
 }
 // --- ---
 
@@ -269,7 +304,7 @@ const syntaxRules: SyntaxRule[] = [
 		specific: false,
 		after: "number",
 		canFindOnly: [],
-		canFindSpecific: ["-", "+", "*", "/", "\n"],
+		canFindSpecific: ["-", "+", "*", "/", "\n", ")"],
 		pair: false
 	},
 	{
@@ -420,6 +455,13 @@ const syntaxRules: SyntaxRule[] = [
 		canFindOnly: ["identifier"],
 		canFindSpecific: [],
 		pair: false,
+	},
+	{
+		specific: false,
+		after: "instruction",
+		canFindOnly: ["number", "identifier"],
+		canFindSpecific: ["#", "word", "byte", "\n"],
+		pair: false
 	}
 ];
 
@@ -432,13 +474,7 @@ function checkSyntaxRule(lines: Line[]) {
 		for (let i = 0; i < tokens.length; i++) {
 			for (let syntaxRule of syntaxRules) {
 
-				// if (syntaxRule.specific) {
-				// 	syntaxRule.after === tokens[i].value;
-				// } else {
-				// 	syntaxRule.after === tokens[i].type;
-				// }
-
-				if (syntaxRule.after === tokens[i].value) {
+				if (syntaxRule.specific && syntaxRule.after === tokens[i].value || syntaxRule.after === tokens[i].type) {
 					if (i === tokens.length - 1 && !(syntaxRule.canFindSpecific.includes("\n"))) {
 						const err: Error = {
 							type: UNEXPECTED_END_OF_LINE,
@@ -459,7 +495,7 @@ function checkSyntaxRule(lines: Line[]) {
 								found = true;
 								break;
 							}
-							if (specific === tokens[i + 1].value) {
+							if (tokens[i + 1] != undefined && specific === tokens[i + 1].value) {
 								found = true;
 								break;
 							}
@@ -475,9 +511,15 @@ function checkSyntaxRule(lines: Line[]) {
 								}
 							}
 							if (!found) {
+								let suggestion = "";
+								if (
+									(tokens[i + 1].value === "sizeof" || tokens[i + 1].value === "$") &&
+									tokens[i].type === "instruction"
+								)
+									suggestion = ". Did you mean '" + tokens[i].value + " # " + tokens[i + 1].value + "...'?";
 								const err: Error = {
 									type: UNEXPECTED_TOKEN,
-									message: "Unexpected token '" + tokens[i + 1].value + "' after '" + tokens[i].value + "'",
+									message: "Unexpected token '" + tokens[i + 1].value + "' after '" + tokens[i].value + "'" + suggestion,
 									otherInfo: true,
 									fromColumn: tokens[i + 1].column,
 									toColumn: tokens[i + 1].column + tokens[i + 1].value.length,
@@ -1962,7 +2004,7 @@ const macroRules: RuleInterface[] = [
 	{
 		name: "syscall",
 		rule: [
-			{ genericToken: false, value: "call" },
+			{ genericToken: false, value: "syscall" },
 			{ genericToken: true, tokenTypes: ["identifier"], isArgument: true }
 		],
 		handleRule: syscall,
@@ -2217,7 +2259,9 @@ function handleSizeOf(lb: Label) {
 					resolve: "size",
 					symbol: ln.tokens[i + 1].value
 				});
-				ln.tokens.splice(i, 2);
+				ln.tokens[i + 1].type = "identifier";
+				ln.tokens[i + 1].value = "";
+				ln.tokens.splice(i, 1);
 			}
 		}
 	}
@@ -2233,7 +2277,8 @@ function handleCurrentAddress(lb: Label) {
 					size: 2,
 					resolve: "currentAddress",
 				});
-				ln.tokens.splice(i, 2);
+				ln.tokens[i].type = "identifier";
+				ln.tokens[i].value = "";
 			}
 		}
 	}
@@ -2593,6 +2638,16 @@ function resolveAddresses(labels: Label[]) {
 
 }
 
+function getUnifromData(label: Label): Data[] {
+	let uniformData: Data[] = [...label.data];
+	for (let sub of label.subLabels) {
+		uniformData.push(...sub.data);
+	}
+
+	uniformData = uniformData.sort((a, b) => a.position > b.position ? 1 : -1);
+	return uniformData;
+}
+
 function resolveSubLabelAddresses(label: Label) {
 	let uniformData: Data[] = [...label.data];
 	let subs: Array<{ subLabel: Label, startingData: Data }> = [];
@@ -2601,6 +2656,8 @@ function resolveSubLabelAddresses(label: Label) {
 			subs.push({ subLabel: sub, startingData: sub.data[0] });
 		uniformData.push(...sub.data);
 	}
+
+	uniformData = uniformData.sort((a, b) => a.position > b.position ? 1 : -1);
 
 	let offset = 0;
 	for (let data of uniformData) {
@@ -2709,7 +2766,6 @@ function setAddressFromSymbol(accessFrom: string[], symbol: string, labels: Labe
 				if (reference === "absolute") {
 					// @ts-ignore
 					data.value = label.address;
-					console.log(data);
 					// exit(2);
 				} else if (reference === "zeroPage") {
 					// @ts-ignore
@@ -2867,7 +2923,11 @@ function setData(labels: Label[]) {
 
 	resolveSizes(labels);
 	resolveAddresses(labels);
-	debugLabelDataHexDump(labels);
+
+	for (let lb of labels) {
+		lb.data = getUnifromData(lb);
+		lb.subLabels = [];
+	}
 }
 
 // ------------------------------ BINARY ------------------------------
@@ -2886,14 +2946,37 @@ function setBinary(labels: Label[]) {
 	// 			lb.binary.push(d.value);
 	// 	}
 	// }
+	for (let lb of labels) {
+		lb.binary = new Uint8Array(lb.size as number);
+		let i = 0;
+		let j = 0;
+		for (; i < lb.data.length; i++) {
+			if (lb.data[i].size === 1) {
+				// @ts-ignore
+				lb.binary[j] = lb.data[i].value;
+				j++;
+			} else {
+				// @ts-ignore
+				lb.binary[j] = lb.data[i].value >> 8;
+				// @ts-ignore
+				lb.binary[j + 1] = lb.data[i].value & 0x00FF;
+				j += 2;
+			}
+		}
+	}
 }
 
-function getBinary(lables: Label[]): Uint8Array {
-	let len = 0;
-	for (let lb of lables) {
-		len += lb.binary.length;
+function getBinary(labels: Label[]): Uint8Array {
+	let size = 0;
+	for (let i = 1; i < labels.length; i++) {
+		size += (labels[i].address as number) - (labels[i - 1].address as number);
 	}
-	let buffer = new Uint8Array(len);
+	size += labels[labels.length - 1].size as number;
+	let buffer = new Uint8Array(size);
+	buffer.fill(0);
+	for (let lb of labels) {
+		buffer.set(lb.binary, (lb.address as number) - (labels[0].address as number));
+	}
 	return buffer;
 }
 
@@ -3007,4 +3090,23 @@ function debugLabelDataHexDump(labels: Label[]) {
 			hexDump(subLb, true);
 		}
 	}
+}
+
+function debugLabelHexDump(lables: Label[]) {
+	const hexDump = (lb: Label) => {
+		console.log(lb.name.cyan);
+		let i = 0;
+		for (let b of lb.binary) {
+			let s = b.toString(16).toUpperCase();
+			if (s.length == 1) s = "0" + s;
+			process.stdout.write(s + " ");
+			i++;
+			if (i % 8 === 0) {
+				console.log();
+			}
+		}
+		console.log()
+	}
+
+	for (let lb of lables) hexDump(lb);
 }

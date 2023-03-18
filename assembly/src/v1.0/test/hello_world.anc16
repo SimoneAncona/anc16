@@ -1,0 +1,8 @@
+message: "Hello, World!"
+len: $
+
+_code:
+	ldi # message
+	ldb len
+	syscall print
+	syscall exit

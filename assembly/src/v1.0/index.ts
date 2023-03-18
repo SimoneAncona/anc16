@@ -46,10 +46,11 @@ if (process.argv[2] === "--version" || process.argv[2] === "-v") {
 }
 
 let flags: string[] = [];
-for (let s of process.argv) {
-	if (s.startsWith("-") && !flags.includes(s)) {
-		flags.push(s);
-	}
+for (let i = 0; i < process.argv.length;) {
+	if (process.argv[i].startsWith("-") && !flags.includes(process.argv[i])) {
+		flags.push(process.argv[i]);
+		process.argv.splice(i, 1);
+	} else i++;
 }
 
 const isSet = (flag: string) => flags.includes(flag);
@@ -64,5 +65,17 @@ if (process.argv.length == 4) {
 let sourceFile = mod.read(sourceFileName);
 mod.setCWD(sourceFileName);
 mod.appendModule(mod.getCWD() + "\\" + path.basename(sourceFileName));
-let assembled = assembler.assemble(sourceFile.toString());
+let assembled = assembler.assemble(sourceFile.toString(), "_main", {
+	useHeader: isSet("-h"),
+	zerosToCode: isSet("-z"),
+	setSymbolRef: isSet("--h-symbol-ref"),
+	accessFileSystem: isSet("--h-fs"),
+	accessVideoMem: isSet("--h-draw"),
+	highPrivileges: isSet("--h-privileges"),
+	symbolRefFile: isSet("--ref")
+});
 mod.write(outFileName, assembled.bin);
+if (assembled.ref != "") {
+	let enc = new TextEncoder();
+	mod.write(outFileName.split(".")[0] + ".ref.anc16", enc.encode(assembled.ref));
+}
