@@ -1,4 +1,4 @@
-import { exit } from "process";
+import { exit, off } from "process";
 import { $_REFERENCE_TO_NULL, Error, FILE_NOT_FOUND, GENERIC_SYNTAX_ERROR, INDENTATION_ERROR, INVALID_IDENTIFIER, INVALID_LABEL_ORIGIN, LABEL_ORIGIN_OVERLAP, LOCAL_SYMBOL_ACCESS, Note, REDEFINITON, SYMBOL_NOT_DEFINED, UNDEFINED_PTR_REFERENCE, UNEXPECTED_END_OF_LINE, UNEXPECTED_TOKEN, UNRECOGNIZED_ADDRESSING_MODE, UNRECOGNIZED_TOKEN, VALUE_SIZE_OVERFLOW, note, printExit, printStackExit } from "./localError";
 import * as colors from "colors";
 import { read, write } from "./files";
@@ -2206,6 +2206,39 @@ function handleReserveBytes(lb: Label) {
 	}
 }
 
+function handleSizeOf(lb: Label) {
+	for (let ln of lb.code) {
+		for (let i = 0; i < ln.tokens.length; i++) {
+			if (ln.tokens[i].value === "sizeof") {
+				lb.data.push({
+					token: ln.tokens[i],
+					position: ln.lineNumber * LINE_PADDING_BYTE_OFFSET + ln.tokens[i].column,
+					size: 2,
+					resolve: "size",
+					symbol: ln.tokens[i + 1].value
+				});
+				ln.tokens.splice(i, 2);
+			}
+		}
+	}
+}
+
+function handleCurrentAddress(lb: Label) {
+	for (let ln of lb.code) {
+		for (let i = 0; i < ln.tokens.length; i++) {
+			if (ln.tokens[i].value === "$") {
+				lb.data.push({
+					token: ln.tokens[i],
+					position: ln.lineNumber * LINE_PADDING_BYTE_OFFSET + ln.tokens[i].column,
+					size: 2,
+					resolve: "currentAddress",
+				});
+				ln.tokens.splice(i, 2);
+			}
+		}
+	}
+}
+
 function handleLiteralStrings(lb: Label) {
 	for (let ln of lb.code) {
 		for (let i = 0; i < ln.tokens.length; i++) {
@@ -2260,23 +2293,23 @@ function handleSubLabelAccess(lb: Label) {
 function handleLiteralNumbers(lb: Label) {
 	for (let ln of lb.code) {
 		for (let tk of ln.tokens) {
-			// if (tk.type !== "number") {
-			// 	if (!(tk.type === "identifier" && tk.value === "")) {
-			// 		const err: LocalError = {
-			// 			type: UNEXPECTED_TOKEN,
-			// 			message: "Unexpected '" + tk.value + "'",
-			// 			otherInfo: true,
-			// 			fromColumn: tk.column,
-			// 			toColumn: tk.column + tk.value.length,
-			// 			fromLine: ln.lineNumber,
-			// 			toLine: ln.lineNumber,
-			// 			sourceLines: [lineToString(ln)],
-			// 			moduleName: ln.fromModule
-			// 		};
-			// 		printExit(err);
-			// 	}
-			// 	continue;
-			// }
+			if (tk.type !== "number") {
+				if (!(tk.type === "identifier")) {
+					const err: Error = {
+						type: UNEXPECTED_TOKEN,
+						message: "Unexpected '" + tk.value + "'",
+						otherInfo: true,
+						fromColumn: tk.column,
+						toColumn: tk.column + tk.value.length,
+						fromLine: ln.lineNumber,
+						toLine: ln.lineNumber,
+						sourceLines: [lineToString(ln)],
+						moduleName: ln.fromModule
+					};
+					printExit(err);
+				}
+				continue;
+			}
 			let value = Number(tk.value);
 			lb.data.push({
 				token: tk,
@@ -2292,7 +2325,8 @@ function handleLiteralNumbers(lb: Label) {
 
 function removeNull(label: Label) {
 	for (let i = 0; i < label.data.length; i++) {
-		if (label.data[i].size === 0) {
+		// @ts-ignore
+		if (label.data[i].size === 0 || label.data[i].resolve === "symbol" && label.data[i].symbol === "") {
 			label.data.splice(i, 1);
 			i--;
 		}
@@ -2353,20 +2387,48 @@ function checkLabels(lables: Label[]) {
 }
 
 function resolveImmediates(lb: Label) {
+	const throwErr = (mnemonic: string, addressing: string, module: string) => {
+		const err: Error = {
+			type: UNRECOGNIZED_ADDRESSING_MODE,
+			message: `'${mnemonic}' does not support '${addressing}' addressing mode`,
+			otherInfo: false,
+			moduleName: module
+		};
+		printExit(err);
+	}
+
 	for (let i = 0; i < lb.data.length; i++) {
 		let data = lb.data[i];
 		if (data.resolve === "instruction") {
-			if (lb.data[i + 1].size == 1) {
-				let v = opcode(data.instruction, "immediate1", null);
+			// @ts-ignore
+			let forced = lb.data[i + 1].resolve === "value" ? lb.data[i + 1].forced : true;
+			let s1 = getOpcode(data.instruction, "immediate1");
+			let s2 = getOpcode(data.instruction, "immediate2")
+			if (lb.data[i + 1].size == 1 && forced) {
+				if (s1 === null) throwErr(data.instruction, "immediate with 1 byte", lb.scope[0]);
 				lb.data[i].resolve = "value";
 				// @ts-ignore
-				lb.data[i].value = v;
-			} else if (lb.data[i + 1].size == 2) {
-				let v = opcode(data.instruction, "immediate2", null);
+				lb.data[i].value = s1;
+			} else if (lb.data[i + 1].size == 2 && forced) {
+				if (s2 === null) throwErr(data.instruction, "immediate with 2 bytes", lb.scope[0]);
 				lb.data[i].resolve = "value";
 				// @ts-ignore
-				lb.data[i].value = v;
+				lb.data[i].value = s2;
+			} else {
+				// @ts-ignore
+				if (s1 != null && fits8bit(lb.data[i + 1].value)) {
+					lb.data[i].resolve = "value";
+					// @ts-ignore
+					lb.data[i].value = s1;
+					lb.data[i + 1].size = 1;
+				} else {
+					lb.data[i].resolve = "value";
+					// @ts-ignore
+					lb.data[i].value = s2;
+					lb.data[i + 1].size = 2;
+				}
 			}
+
 		}
 	}
 }
@@ -2374,10 +2436,65 @@ function resolveImmediates(lb: Label) {
 function resolveSizes(labels: Label[]) {
 	for (let lb of labels) {
 		let tempSize = 0;
+		for (let sub of lb.subLabels) {
+			let tempInnerSize = 0;
+			for (let d of sub.data) {
+				tempInnerSize += d.size;
+			}
+			sub.size = tempInnerSize;
+			tempSize += tempInnerSize;
+		}
 		for (let d of lb.data) {
 			tempSize += d.size;
 		}
 		lb.size = tempSize;
+	}
+
+	for (let lb of labels) {
+		for (let d of lb.data) {
+			if (d.resolve === "size") {
+				//@ts-ignore
+				d.resolve = "value";
+				//@ts-ignore
+				d.forced = false;
+				//@ts-ignore
+				d.value = getSizeOf(d.symbol, labels);
+			}
+		}
+		for (let sub of lb.subLabels) {
+			for (let d of sub.data) {
+				if (d.resolve === "size") {
+					//@ts-ignore
+					d.resolve = "value";
+					//@ts-ignore
+					d.forced = false;
+					//@ts-ignore
+					d.value = getSizeOf(d.symbol, labels);
+				}
+			}
+		}
+	}
+}
+
+function getSizeOf(symbol: string, labels: Label[]) {
+	let scope = symbol.split(".");
+	if (scope.length == 1) {
+		for (let label of labels) {
+			if (label.name === symbol) {
+				return label.size;
+			}
+		}
+	}
+	else {
+		for (let label of labels) {
+			if (label.name === scope[0]) {
+				for (let sublb of label.subLabels) {
+					if (sublb.name === scope[1]) {
+						return sublb.size;
+					}
+				}
+			}
+		}
 	}
 }
 
@@ -2404,7 +2521,7 @@ function resolveAddresses(labels: Label[]) {
 		}
 	}
 
-	addressMap = addressMap.sort((a, b) => a > b ? 1 : -1);
+	addressMap = addressMap.sort((a, b) => a.label.address > b.label.address ? 1 : -1);
 
 	for (let i = 0; i < labels.length; i++) {
 		for (let a of addressMap) {
@@ -2430,9 +2547,9 @@ function resolveAddresses(labels: Label[]) {
 
 	for (let i = 1; i < labels.length; i++) {
 		if (labels[i].address == "unresolved") {
-			labels[i].address = (labelBefore.address as number) + (labelBefore.size as number) + 1;
+			labels[i].address = (labelBefore.address as number) + (labelBefore.size as number);
 		} else {
-			if ((labelBefore.address as number) + (labelBefore.size as number) >= (labels[i].address as number)) {
+			if ((labelBefore.address as number) + (labelBefore.size as number) > (labels[i].address as number)) {
 				const err: Error = {
 					type: LABEL_ORIGIN_OVERLAP,
 					message: "Label '" + labels[i].name + "' overlaps '" + labelBefore.name + "'",
@@ -2441,16 +2558,68 @@ function resolveAddresses(labels: Label[]) {
 				printExit(err);
 			}
 		}
+		labelBefore = labels[i];
+		resolveSubLabelAddresses(labelBefore);
 	}
 
 	for (let lb of labels) {
 		for (let d of lb.data) {
 			if (d.resolve === "symbol") {
-				setAddressFromSymbol(lb.scope, d.symbol, labels, d, d.reference);
+				setAddressFromSymbol(lb.scope, d.symbol, labels, d, d.reference, getOffset(lb, d));
+			} else if (d.resolve === "currentAddress") {
+				//@ts-ignore
+				d.resolve = "value";
+				//@ts-ignore
+				d.forced = true;
+				//@ts-ignore
+				d.value = getOffset(lb, d);
+			}
+		}
+		for (let sublb of lb.subLabels) {
+			for (let d of sublb.data) {
+				if (d.resolve === "symbol") {
+					setAddressFromSymbol(sublb.scope, d.symbol, labels, d, d.reference, getOffset(sublb, d));
+				} else if (d.resolve === "currentAddress") {
+					//@ts-ignore
+					d.resolve = "value";
+					//@ts-ignore
+					d.forced = true;
+					//@ts-ignore
+					d.value = getOffset(sublb, d);
+				}
 			}
 		}
 	}
 
+}
+
+function resolveSubLabelAddresses(label: Label) {
+	let uniformData: Data[] = [...label.data];
+	let subs: Array<{ subLabel: Label, startingData: Data }> = [];
+	for (let sub of label.subLabels) {
+		if (sub.data.length != 0)
+			subs.push({ subLabel: sub, startingData: sub.data[0] });
+		uniformData.push(...sub.data);
+	}
+
+	let offset = 0;
+	for (let data of uniformData) {
+		for (let sub of subs) {
+			if (sub.startingData == data) {
+				sub.subLabel.address = label.address as number + offset;
+			}
+		}
+		offset += data.size;
+	}
+}
+
+function getOffset(label: Label, data: Data): number {
+	let addr = label.address as number;
+	for (let d of label.data) {
+		if (d === data) return addr;
+		addr += (d.size as number);
+	}
+	return addr;
 }
 
 function existSymbol(symbol: string, labels: Label[]): boolean {
@@ -2482,7 +2651,7 @@ function handleIdentifiers(labels: Label[]) {
 	for (let lb of labels) {
 		for (let ln of lb.code) {
 			for (let tk of ln.tokens) {
-				if (tk.type === "identifier") {
+				if (tk.type === "identifier" && tk.value !== "") {
 					if (!existSymbol(tk.value, labels)) {
 						const err: Error = {
 							type: SYMBOL_NOT_DEFINED,
@@ -2503,9 +2672,25 @@ function handleIdentifiers(labels: Label[]) {
 	}
 }
 
-function setAddressFromSymbol(accessFrom: string[], symbol: string, labels: Label[], data: Data, reference: "absolute" | "zeroPage" | "relative") {
+function handleSymbols(lb: Label) {
+	for (let ln of lb.code) {
+		for (let tk of ln.tokens) {
+			if (tk.type === "identifier" && tk.value != "") {
+				lb.data.push({
+					token: tk,
+					resolve: "symbol",
+					position: ln.lineNumber * LINE_PADDING_BYTE_OFFSET + tk.column,
+					size: 2,
+					symbol: tk.value,
+					reference: "absolute"
+				});
+			}
+		}
+	}
+}
+
+function setAddressFromSymbol(accessFrom: string[], symbol: string, labels: Label[], data: Data, reference: "absolute" | "zeroPage" | "relative", fromAddress: number) {
 	let scope = symbol.split(".");
-	let value = 0;
 	if (scope.length == 1) {
 		for (let label of labels) {
 			if (label.name === symbol) {
@@ -2520,10 +2705,37 @@ function setAddressFromSymbol(accessFrom: string[], symbol: string, labels: Labe
 						printExit(err);
 					}
 				}
+				data.resolve = "value";
 				if (reference === "absolute") {
-					data.resolve = "value";
 					// @ts-ignore
 					data.value = label.address;
+					console.log(data);
+					// exit(2);
+				} else if (reference === "zeroPage") {
+					// @ts-ignore
+					data.value = (label.address >> 8);
+					if (!fits8bit(label.address as number)) {
+						const n: Note = {
+							message: "Zero page addressing use only 1 byte. The referred address of '" + symbol + "' has been modified to fit 8 bits",
+							otherInfo: false,
+							moduleName: accessFrom[0]
+						};
+						note(n);
+					}
+				} else {
+					// @ts-ignore
+					data.value = (label.address as number - fromAddress);
+					data.size = 1;
+					// @ts-ignore
+					if (!fits8bit(label.value as number * 2)) {
+						const err: Error = {
+							type: VALUE_SIZE_OVERFLOW,
+							message: "The relative addressing must be an 8 bit signed value",
+							otherInfo: false,
+							moduleName: accessFrom[0]
+						};
+						printExit(err);
+					}
 				}
 			}
 		}
@@ -2560,7 +2772,19 @@ function setAddressFromSymbol(accessFrom: string[], symbol: string, labels: Labe
 								note(n);
 							}
 						} else {
-
+							// @ts-ignore
+							data.value = (sublb.address as number - fromAddress);
+							data.size = 1;
+							// @ts-ignore
+							if (!fits8bit(data.value as number * 2)) {
+								const err: Error = {
+									type: VALUE_SIZE_OVERFLOW,
+									message: "The relative addressing must be an 8 bit signed value",
+									otherInfo: false,
+									moduleName: accessFrom[0]
+								};
+								printExit(err);
+							}
 						}
 					}
 				}
@@ -2576,19 +2800,23 @@ function setData(labels: Label[]) {
 		handleSubLabelAccess(lb);
 		handleByteWordCast(lb);
 		handleReserveBytes(lb);
+		handleSizeOf(lb);
+		handleCurrentAddress(lb);
 		handleLiteralStrings(lb);
 		handleMacros(lb);
 		for (let sublb of lb.subLabels) {
 			handleSubLabelAccess(sublb);
 			handleByteWordCast(sublb);
 			handleReserveBytes(sublb);
+			handleSizeOf(sublb);
+			handleCurrentAddress(sublb);
 			handleLiteralStrings(sublb);
 			handleMacros(sublb);
 		}
 	}
 	handleIdentifiers(labels);
 
-	for (let lb of labels) {
+	const setRules = (lb: Label) => {
 		let rules: Rule[] = [];
 		lb.code.forEach(line => {
 			let rule = matchRules(line, addressingRules);
@@ -2605,6 +2833,13 @@ function setData(labels: Label[]) {
 	}
 
 	for (let lb of labels) {
+		setRules(lb);
+		for (let sublb of lb.subLabels) {
+			setRules(sublb);
+		}
+	}
+
+	for (let lb of labels) {
 		lb.data = lb.data.sort((a, b) => a.position > b.position ? 1 : -1);
 		for (let sublb of lb.subLabels) {
 			sublb.data = sublb.data.sort((a, b) => a.position > b.position ? 1 : -1);
@@ -2613,10 +2848,12 @@ function setData(labels: Label[]) {
 
 	for (let lb of labels) {
 		handleLiteralNumbers(lb);
+		handleSymbols(lb);
 		removeNull(lb);
 		for (let sublb of lb.subLabels) {
 			handleLiteralNumbers(sublb);
-			removeNull(lb);
+			handleSymbols(sublb);
+			removeNull(sublb);
 		}
 	}
 
@@ -2755,6 +2992,10 @@ function debugLabelDataHexDump(labels: Label[]) {
 				process.stdout.write(data.symbol.green + " ");
 			} else if (data.resolve === "instruction") {
 				process.stdout.write(data.instruction.toUpperCase().red + " ");
+			} else if (data.resolve === "size") {
+				process.stdout.write(data.symbol.magenta + " ");
+			} else {
+				process.stdout.write("$ ");
 			}
 		}
 		console.log();

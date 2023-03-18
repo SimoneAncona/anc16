@@ -12,7 +12,7 @@ _code:
 	reserve test - 6
 	sizeof struct
 elif used test
-org 0x304
+org 0x0304
 _code:
 	"pippo si fa le ..."
 elif used sus
@@ -20,9 +20,9 @@ _code:
 	"ciao"
 endif
 
-org 0x0200
+org 0x3200
 func:
-	ada _code.var1
+	ada struct.nome
 	adb # word 10
 	reserve 20
 altra_func:
@@ -30,6 +30,9 @@ altra_func:
 
 altra_func2:
 	call func
+	a: 
+		sizeof func
+		$
 
 struct:	; posso creare delle strutture dati
 	global nome: "giovanni" reserve 10
