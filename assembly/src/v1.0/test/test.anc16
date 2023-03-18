@@ -1,0 +1,39 @@
+use yolo
+use test as 10
+use sus as bella_zio - 29 + (10 * 2) + 2
+import testlib
+import errors
+if not used test
+org 0x101
+_code:
+	lda #6
+	global var1: word 5
+	local var3: word 6
+	reserve test - 6
+	sizeof struct
+elif used test
+org 0x304
+_code:
+	"pippo si fa le ..."
+elif used sus
+_code:
+	"ciao"
+endif
+
+org 0x0200
+func:
+	ada _code.var1
+	adb # word 10
+	reserve 20
+altra_func:
+	call func	; call la funzione alla posizione 0200
+
+altra_func2:
+	call func
+
+struct:	; posso creare delle strutture dati
+	global nome: "giovanni" reserve 10
+	global cognome: "parodi" reserve sus
+	global eta: word 25
+
+

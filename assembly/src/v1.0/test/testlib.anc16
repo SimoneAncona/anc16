@@ -1,0 +1,7 @@
+use bella_zio as 294
+use aadfa as 4
+func2:
+	lda #2
+	ldb #5
+	sub1: "ciao"
+	; sub1: "ciao ancora"

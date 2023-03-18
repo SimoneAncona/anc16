@@ -1,0 +1,4 @@
+USE SYSCALL_print AS LDAH #1 BRK
+
+_code:
+	SYSCALL_print

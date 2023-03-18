@@ -1,0 +1,17 @@
+{
+  "name": "check_anc_16_isa_json_file",
+  "version": "1.0.0",
+  "description": "Script to check errors in anc16_isa.json file",
+  "main": "index.js",
+  "scripts": {
+	"build": "tsc --build",
+    "start": "tsc --build && node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^18.14.0",
+    "typescript": "^4.9.5"
+  }
+}

@@ -1,0 +1,17 @@
+str1: "ciao bella zi"
+funzionePazzesca:
+	LDA #xFF
+	CMPA #0
+	LMHI % BYTE xFF
+	ADA %xA2, I
+	JZC ciao
+	;RET
+	ciao:
+		; sub routine pazzesca
+		INA
+	
+stuff:
+	LDA WORD 5, I
+	JCC * 5
+	LMHI # WORD xFF
+	LDA (WORD xFF), I

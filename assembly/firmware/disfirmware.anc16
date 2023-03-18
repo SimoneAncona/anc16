@@ -1,0 +1,18 @@
+_code:
+	LDI # WORD x100
+	LDA # WORD x0
+	READ A
+	STBH WORD x0, I
+	INA
+	INI
+	CMPI # WORD x200c
+	JZC * BYTE xf2
+	LDA # WORD x0
+	LDB # WORD x0
+	LDI # WORD x0
+	LDJ # BYTE x0
+	LDS # WORD x0
+	JMP (WORD x2004)
+BYTE x41
+BYTE x4e
+	SHR A

@@ -1,0 +1,27 @@
+use test as 10
+if not used test
+org 0x101
+_code:
+	lda #6
+	global var1: word 5
+	local var3: word 6
+	reserve test - 6
+	sizeof struct
+endif
+
+org 0x0200
+func:
+	ada _code.var1
+
+altra_func:
+	call func	; call la funzione alla posizione 0200
+
+altra_func2:
+	call *func	; call la funzione che si trova a meno o più tot byte da qua
+
+struct:	; posso creare delle strutture dati
+	global nome: "giovanni" reserve 10
+	global cognome: "parodi" reserve 10
+	global eta: word 25
+
+

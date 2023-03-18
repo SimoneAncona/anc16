@@ -1,0 +1,7 @@
+; esempio con errori
+use stdcall
+_code:
+	lda ciao
+	; word ada	; errore
+	ldb #102
+	ada #7

@@ -1,0 +1,28 @@
+ORG xFE00
+USE START AS x0100
+USE END AS x200C
+USE OS_ENTRY AS x2004
+
+_code:
+	loadOS:
+		LDI # START
+		LDA # 0
+
+		READ A
+		STBH 0, I
+		INA
+		INI
+		CMPI # END
+		JZC * -14
+
+	initRegs:
+		LDA #0
+		LDB #0
+		LDI #0
+		LDJ #0
+		LDS #0
+
+	OSentry:
+		JMP (OS_ENTRY)
+		
+	"ANC"

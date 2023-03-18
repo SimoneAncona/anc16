@@ -1,0 +1,23 @@
+save PC
+save SR
+load the starting address (I)
+A = ins
+a != RET?
+	INS takes 2 byte arg?
+		push A
+		AH = arg1
+		push AH
+		AH = arg2
+		push AH
+	otherwise, INS takes 1 byte arg?
+		push A
+		AH = arg1
+		push AH
+	otherwise
+		push A
+a == RET
+	push A
+	push saved PC
+	push saved SR
+	JUMP TO I
+

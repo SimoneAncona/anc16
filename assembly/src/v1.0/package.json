@@ -1,0 +1,19 @@
+{
+  "name": "assembler",
+  "version": "1.0.0",
+  "description": "ANC16 std 2 assembler",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc --build",
+    "start": "tsc --build && cls && echo ------------------------ && node index.js ./test/test.anc16 ./test/test.bin",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Simone Ancona",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^18.13.0",
+    "colors": "^1.4.0",
+    "fs": "^0.0.1-security",
+    "typescript": "^4.9.5"
+  }
+}

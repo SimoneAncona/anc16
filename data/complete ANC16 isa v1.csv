@@ -1,0 +1,392 @@
+HEX;MNE;ADDRESSING;ARGS LEN (DEFAULT: 0 bytes)
+x0000;NOP;impl;
+x0001;KILL;impl;
+x0002;ARET;impl;
+x0003;CPUID;impl;
+x0004;INA;impl;
+x0005;INB;impl;
+x0006;INI;impl;
+x0007;INJ;impl;
+x0008;DEA;impl;
+x0009;DEB;impl;
+x000A;DEI;impl;
+x000B;DEJ;impl;
+x000C;MSB;A;
+x000D;MSB;B;
+x000E;SEI;impl;
+x000F;SED;impl;
+x0010;CLC;impl;
+x0011;CLO;impl;
+x0012;CLD;impl;
+x0013;CLI;impl;
+x0014;ADA;B;
+x0015;ADB;A;
+x0016;ANA;B;
+x0017;ANB;A;
+x0018;ANA;I;
+x0019;ANB;I;
+x001A;CMAH;BH;
+x001B;CMBH;AH;
+x001C;CMPA;B;
+x001D;CMPB;A;
+x001E;CMPA;I;
+x001F;CMPB;I;
+x0020;CMPI;A;
+x0021;JCC;rel with J;
+x0022;JOC;rel with J;
+x0023;JNE;rel with J;
+x0024;JNC;rel with J;
+x0025;JCS;rel with J;
+x0026;JOS;rel with J;
+x0027;JEQ;rel with J;
+x0028;JNS;rel with J;
+x0029;NOP;impl;
+x002A;NOP;impl;
+x002B;NOP;impl;
+x002C;NOP;impl;
+x002D;TBAH;impl;
+x002E;TABH;impl;
+x002F;NOP;impl;
+x0030;NOP;impl;
+x0031;TAHJ;impl;
+x0032;TBHJ;impl;
+x0033;NOP;impl;
+x0034;NOP;impl;
+x0035;NOP;impl;
+x0036;ORA;B;
+x0037;ORB;A;
+x0038;ORA;I;
+x0039;ORB;I;
+x003A;PSH;A;
+x003B;PSH;B;
+x003C;PSH;AH;
+x003D;PSH;AL;
+x003E;READ;A;
+x003F;READ;B;
+x0040;SHL;A;
+x0041;SHL;B;
+x0042;SHL;I;
+x0043;SHR;A;
+x0044;SHR;B;
+x0045;SHR;I;
+x0046;SUA;B;
+x0047;SUB;A;
+x0048;SUA;I;
+x0049;SUB;I;
+x004A;TAB;impl;
+x004B;TAI;impl;
+x004C;TBA;impl;
+x004D;TBI;impl;
+x004E;TIS;impl;
+x004F;TSB;impl;
+x0050;WRTI;AH;
+x0051;WRTI;BH;
+x0052;XORA;B;
+x0053;XORB;A;
+x0054;XORA;I;
+x0055;XORB;I;
+x0056;JMP;A;
+x0057;JMP;B;
+x0058;JMP;I;
+x0059;TBAL;impl;
+x005A;TABL;impl;
+x005B;TAD;impl;
+x005C;TAIMH;impl;
+x005D;TAIML;impl;
+x005E;PSH;impl;
+x005F;TAEMH;impl;
+x0060;TAEML;impl
+x0061;CLS;impl;
+x0062;SES;impl;
+x0063;JMP;rel with J;
+x0064;NOP;impl;
+x....;...;...;
+x3FFC;NOP;impl;
+x3FFD;KILL;impl;
+x3FFE;REST;impl;
+x3FFF;BRK;impl;
+x4000;NOP;imm;1
+x4001;PSH;imm;1
+x4002;PSH;zpg indexed;1
+x4003;PSH;zpg;1
+x4004;ADA;imm;1
+x4005;ADA;zpg;1
+x4006;ADA;zpg indexed;1
+x4007;ADB;imm;1
+x4008;ADB;zpg;1
+x4009;ADB;zpg indexed;1
+x400A;ANA;imm;1
+x400B;ANA;zpg;1
+x400C;ANA;zpg indexed;1
+x400D;ANB;imm;1
+x400E;ANB;zpg;1
+x400F;ANB;zpg indexed;1
+x4010;JCC;rel;1
+x4011;JOC;rel;1
+x4012;JNE;rel;1
+x4013;JNC;rel;1
+x4014;JCS;rel;1
+x4015;JOS;rel;1
+x4016;JEQ;rel;1
+x4017;JNS;rel;1
+x4018;LDAH;imm;1
+x4019;LDAL;imm;1
+x401A;LDBH;imm;1
+x401B;LDBL;imm;1
+x401C;LDJ;imm;1
+x401D;ORA;imm;1
+x401E;ORA;zpg;1
+x401F;ORA;zpg indexed;1
+x4020;ORB;imm;1
+x4021;ORB;zpg;1
+x4022;ORB;zpg indexed;1
+x4023;NOP;imm;1
+x4024;READ;zpg;1
+x4025;READ;zpg indexed;1
+x4026;STA;zpg;1
+x4027;STA;zpg indexed;1
+x4028;STAH;zpg;1
+x4029;STAH;zpg indexed;1
+x402A;STB;zpg;1
+x402B;STB;zpg indexed;1
+x402C;STBH;zpg;1
+x402D;STBH;zpg indexed;1
+x402E;STI;zpg;1
+x402F;STJ;zpg;1
+x4030;SUA;imm;1
+x4031;SUA;zpg;1
+x4032;SUA;zpg indexed;1
+x4033;SUB;imm;1
+x4034;SUB;zpg;1
+x4035;SUB;zpg indexed;1
+x4036;WRTI;imm;1
+x4037;WRTI;zpg;1
+x4038;NOP;zpg indexed;1
+x4039;XORA;imm;1
+x403A;XORA;zpg;1
+x403B;XORA;zpg indexed;1
+x403C;XORB;imm;1
+x403D;XORB;zpg;1
+x403E;XORB;zpg indexed;1
+x403F;CMAH;imm;1
+x4040;CMAH;zpg;1
+x4041;CMAH;zpg indexed;1
+x4042;CMBH;imm;1
+x4043;CMBH;zpg;1
+x4044;CMBH;zpg indexed;1
+x4045;CMPA;zpg;1
+x4046;CMPA;zpg indexed;1
+x4047;CMPB;zpg;1
+x4048;CMPB;zpg indexed;1
+x4049;CMPI;zpg;1
+x404A;LDJ;zpg;1
+x404B;LIMH;zpg;1
+x404C;LIMH;zpg indexed;1
+x404D;LIML;zpg;1
+x404E;LIML;zpg indexed;2
+x404F;SIMH;zpg;1
+x4050;SIMH;zpg indexed;1
+x4051;SIML;zpg;1
+x4052;SIML;zpg indexed;1
+x4053;LDSR;immediate;1
+x4054;LEMH;zpg;1
+x4055;LEMH;zpg indexed;1
+x4056;LEML;zpg;1
+x4057;LEML;zpg indexed;1
+x4058;SEMH;zpg;1
+x4059;SEMH;zpg indexed;1
+x405A;SEML;zpg;1
+x405B;SEML;zpg indexed;1
+x405C;JMP;rel;1
+x405D;NOP;imm;1
+x....;...;imm;1
+x7FFF;NOP;imm;1
+x8000;NOP;absolute;2
+x8001;PSH;absolute;2
+x8002;PSH;indirect;2
+x8003;PSH;indirect indexed;2
+x8004;ADA;absolute;2
+x8005;ADA;absolute indexed;2
+x8006;ADA;indirect;2
+x8007;ADA;indirect indexed;2
+x8008;ADB;absolute;2
+x8009;ADB;absolute indexed;2
+x800A;ADB;indirect;2
+x800B;ADB;indirect indexed;2
+x800C;ANA;absolute;2
+x800D;ANA;absolute indexed;2
+x800E;ANA;indirect;2
+x800F;ANA;indirect indexed;2
+x8010;ANB;absolute;2
+x8011;ANB;absolute indexed;2
+x8012;ANB;indirect;2
+x8013;ANB;indirect indexed;2
+x8014;CMAH;absolute;2
+x8015;CMAH;absolute indexed;2
+x8016;CMAH;indirect;2
+x8017;CMAH;indirect indexed;2
+x8018;CMBH;absolute;2
+x8019;CMBH;absolute indexed;2
+x801A;CMBH;indirect;2
+x801B;CMBH;indirect indexed;2
+x801C;CMPA;absolute;2
+x801D;CMPA;absolute indexed;2
+x801E;CMPA;indirect;2
+x801F;CMPA;indirect indexed;2
+x8020;CMPB;absolute;2
+x8021;CMPB;absolute indexed;2
+x8022;CMPB;indirect;2
+x8023;CMPB;indirect indexed;2
+x8024;CMPA;imm;2
+x8025;CMPB;imm;2
+x8026;CMPI;imm;2
+x8027;CMPI;absolute;2
+x8028;CMPI;indirect;2
+x8029;JCC;absolute;2
+x802A;JOC;absolute;2
+x802B;JNE;absolute;2
+x802C;JNC;absolute;2
+x802D;JCS;absolute;2
+x802E;JOS;absolute;2
+x802F;JEQ;absolute;2
+x8030;JNS;absolute;2
+x8031;JMP;absolute;2
+x8032;JMP;indirect;2
+x8033;ADA;imm;2
+x8034;ADB;imm;2
+x8035;ANA;imm;2
+x8036;ANB;imm;2
+x8037;LDA;absolute;2
+x8038;LDA;absolute indexed;2
+x8039;LDA;indirect;2
+x803A;LDA;indirect indexed;2
+x803B;LDAH;absolute;2
+x803C;LDAH;absolute indexed;2
+x803D;LDAH;indirect;2
+x803E;LDAH;indirect indexed;2
+x803F;LDAL;absolute;2
+x8040;LDAL;absolute indexed;2
+x8041;LDAL;indirect;2
+x8042;LDAL;indirect indexed;2
+x8043;LDB;absolute;2
+x8044;LDB;absolute indexed;2
+x8045;LDB;indirect;2
+x8046;LDB;indirect indexed;2
+x8047;LDBH;absolute;2
+x8048;LDBH;absolute indexed;2
+x8049;LDBH;indirect;2
+x804A;LDBH;indirect indexed;2
+x804B;LDBL;absolute;2
+x804C;LDBL;absolute indexed;2
+x804D;LDBL;indirect;2
+x804E;LDBL;indirect indexed;2
+x804F;LDI;absolute;2
+x8050;LDI;indirect;2
+x8051;LDJ;absolute;2
+x8052;LDJ;indirect;2
+x8053;LDA;imm;2
+x8054;LDB;imm;2
+x8055;LDI;imm;2
+x8056;LDS;absolute;2
+x8057;LDS;indirect;2
+x8058;LDS;imm;2
+x8059;ORA;absolute;2
+x805A;ORA;absolute indexed;2
+x805B;ORA;indirect;2
+x805C;ORA;indirect indexed;2
+x805D;ORB;absolute;2
+x805E;ORB;absolute indexed;2
+x805F;ORB;indirect;2
+x8060;ORB;indirect indexed;2
+x8061;ORA;imm;2
+x8062;ORB;imm;2
+x8063;READ;absolute;2
+x8064;READ;absolute indexed;2
+x8065;STA;absolute;2
+x8066;STA;absolute indexed;2
+x8067;STA;indirect;2
+x8068;STA;indirect indexed;2
+x8069;STAH;absolute;2
+x806A;STAH;absolute indexed;2
+x806B;STAH;indirect;2
+x806C;STAH;indirect indexed;2
+x806D;STB;absolute;2
+x806E;STB;absolute indexed;2
+x806F;STB;indirect;2
+x8070;STB;indirect indexed;2
+x8071;STBH;absolute;2
+x8072;STBH;absolute indexed;2
+x8073;STBH;indirect;2
+x8074;STBH;indirect indexed;2
+x8075;STI;absolute;2
+x8076;NOP;absolute indexed;2
+x8077;STI;indirect;2
+x8078;NOP;indirect indexed;2
+x8079;STJ;absolute;2
+x807A;STJ;absolute indexed;2
+x807B;STJ;indirect;2
+x807C;STJ;indirect indexed;2
+x807D;SUA;absolute;2
+x807E;SUA;absolute indexed;2
+x807F;SUA;indirect;2
+x8080;SUA;indirect indexed;2
+x8081;SUB;absolute;2
+x8082;SUB;absolute indexed;2
+x8083;SUB;indirect;2
+x8084;SUB;indirect indexed;2
+x8085;WRTE;absolute;2
+x8086;KILL;absolute;2
+x8087;WRTE;absolute indexed;2
+x8088;WRTI;absolute;2
+x8089;WRTI;indirect;2
+x808A;LDDR;absolute;2
+x808B;LDDR;indirect;2
+x808C;LDDR;imm;2
+x808D;LIMH;absolute;2
+x808E;LIMH;indirect;2
+x808F;LIMH;imm;2
+x8090;LIML;absolute;2
+x8091;LIML;indirect;2
+x8092;LIML;imm;2
+x8093;SIMH;absolute;2
+x8094;SIMH;absolute indexed;2
+x8095;SIMH;indirect;2
+x8096;SIMH;indirect indexed;2
+x8097;SIML;absolute;2
+x8098;SIML;absolute indexed;2
+x8099;SIML;indirect;2
+x809A;SIML;indirect indexed;2
+x809B;SUA;immediate;2
+x809C;SUB;immediate;2
+x809D;XORA;absolute;2
+x809E;XORA;absolute indexed;2
+x809F;XORA;indirect;2
+x80A0;XORA;indirect indexed;2
+x80A1;XORB;absolute;2
+x80A2;XORB;absolute indexed;2
+x80A3;XORB;indirect;2
+x80A4;XORB;indirect indexed;2
+x80A5;XORA;immediate;2
+x80A6;XORB;immediate;2
+x80A7;STPC;absolute;2
+x80A8;STSR;absolute;2
+x80A9;LDSR;absolute;2
+x80B0;LDSR;indirect;2
+x80B1;LEMH;absolute;2
+x80B2;LEMH;indirect;2
+x80B3;LEMH;immediate;2
+x80B4;LEML;absolute;2
+x80B5;LEML;indirect;2
+x80B6;LEML;immediate;2
+x80B7;SEMH;absolute;2
+x80B8;SEMH;absolute indexed;2
+x80B9;SEMH;indirect;2
+x80BA;SEMH;indirect indexed;2
+x80BB;SEML;absolute;2
+x80BC;SEML;absolute indexed;2
+x80BD;SEML;indirect;2
+x80BE;SEML;indirect indexed;2
+x80BF;NOP;absolute;2
+x....;...;...;2
+x80FE;NOP;absolute;2
+x80FF;RET;impl;
