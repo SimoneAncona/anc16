@@ -1,5 +1,5 @@
 import isa from "../../../../data/anc16_isa.json"
-import { printExit, LocalError } from "./localError";
+import { printExit, Error } from "./localError";
 
 // addressing rules
 export type Addressing =

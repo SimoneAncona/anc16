@@ -15,26 +15,29 @@ export const
 	UNRECOGNIZED_TOKEN: LocalErrorType = { name: "SyntaxError", code: 0x0200 },
 	INVALID_IDENTIFIER: LocalErrorType = { name: "SyntaxError", code: 0x0201 },
 	GENERIC_SYNTAX_ERROR: LocalErrorType = { name: "SyntaxError", code: 0x0202 },
-	SYMBOL_NOT_DEFINED: LocalErrorType = { name: "SymbolError", code: 0x0301 },
 	UNEXPECTED_END_OF_LINE: LocalErrorType = { name: "SyntaxError", code: 0x0203 },
 	UNEXPECTED_TOKEN: LocalErrorType = { name: "SyntaxError", code: 0x0204 },
 	INDENTATION_ERROR: LocalErrorType = { name: "SyntaxError", code: 0x0205 },
 	REDEFINITON: LocalErrorType = { name: "SymbolError", code: 0x0300 },
+	SYMBOL_NOT_DEFINED: LocalErrorType = { name: "SymbolError", code: 0x0301 },
+	LOCAL_SYMBOL_ACCESS: LocalErrorType = { name: "SymbolError", code: 0x0302 },
 	$_REFERENCE_TO_NULL: LocalErrorType = { name: "ReferenceError", code: 0x0400 },
 	UNDEFINED_PTR_REFERENCE: LocalErrorType = { name: "ReferenceError", code: 0x0401 },
+	INVALID_LABEL_ORIGIN: LocalErrorType = { name: "ReferenceError", code: 0x0402 },
+	LABEL_ORIGIN_OVERLAP: LocalErrorType = { name: "ReferenceError", code: 0x0403 },
 	VALUE_SIZE_OVERFLOW: LocalErrorType = { name: "ValueError", code: 0x500 },
 	UNRECOGNIZED_ADDRESSING_MODE: LocalErrorType = { name: "ValueError", code: 0x501 },
 	FS_ERROR: LocalErrorType = { name: "FSError", code: 0x0600 }
 
-export type LocalError = {
+export type Error = {
 	type: LocalErrorType,
 	message: string,
 	otherInfo: false,
-	fromLine?: number | undefined,
-	fromColumn?: number | undefined,
-	toLine?: number | undefined,
-	toColumn?: number | undefined,
-	source?: string | undefined,
+	// fromLine?: number | undefined,
+	// fromColumn?: number | undefined,
+	// toLine?: number | undefined,
+	// toColumn?: number | undefined,
+	// source?: string | undefined,
 	moduleName?: string | undefined
 } | {
 	type: LocalErrorType,
@@ -45,10 +48,29 @@ export type LocalError = {
 	toLine: number,
 	toColumn: number,
 	sourceLines: string[],
-	moduleName?: string | undefined
+	moduleName: string | undefined
 }
 
-export function print(err: LocalError) {
+export type Note = {
+	message: string,
+	otherInfo: false,
+	moduleName?: string | undefined
+} | {
+	message: string,
+	otherInfo: true,
+	fromLine: number,
+	fromColumn: number,
+	toLine: number,
+	toColumn: number,
+	sourceLines: string[],
+	moduleName: string | undefined
+}
+
+export function note(note: Note) {
+
+}
+
+export function print(err: Error) {
 	let fixedDigitCode = err.type.code.toString();
 	while (fixedDigitCode.length < 5) fixedDigitCode = "0" + fixedDigitCode;
 	let module = "_main";
@@ -93,12 +115,12 @@ export function print(err: LocalError) {
 	console.error(errorString);
 }
 
-export function printExit(err: LocalError) {
+export function printExit(err: Error) {
 	print(err);
 	exit(1);
 }
 
-export function printStackExit(errs: LocalError[]) {
+export function printStackExit(errs: Error[]) {
 	console.error("Found " + errs.length.toString().red + (errs.length == 1 ? " error" : " errors"));
 
 	errs.forEach(err => {

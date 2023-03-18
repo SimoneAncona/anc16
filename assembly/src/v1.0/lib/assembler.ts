@@ -1,11 +1,10 @@
 import { exit } from "process";
-import * as localError from "./localError";
+import { $_REFERENCE_TO_NULL, Error, FILE_NOT_FOUND, GENERIC_SYNTAX_ERROR, INDENTATION_ERROR, INVALID_IDENTIFIER, INVALID_LABEL_ORIGIN, LABEL_ORIGIN_OVERLAP, LOCAL_SYMBOL_ACCESS, Note, REDEFINITON, SYMBOL_NOT_DEFINED, UNDEFINED_PTR_REFERENCE, UNEXPECTED_END_OF_LINE, UNEXPECTED_TOKEN, UNRECOGNIZED_ADDRESSING_MODE, UNRECOGNIZED_TOKEN, VALUE_SIZE_OVERFLOW, note, printExit, printStackExit } from "./localError";
 import * as colors from "colors";
 import { read, write } from "./files";
 import * as mod from "./files";
 import * as path from "path";
 import * as fs from "fs";
-import { before } from "node:test";
 import { Addressing, getOpcode } from "./isa";
 import { HeaderSetter } from "./headerSetter";
 
@@ -120,12 +119,12 @@ export function assemble
 // --- ---
 
 function unresolvedAddress(lbname: string) {
-	const err: localError.LocalError = {
-		type: localError.UNDEFINED_PTR_REFERENCE,
+	const err: Error = {
+		type: UNDEFINED_PTR_REFERENCE,
 		message: "Cannot resolve the address of '" + lbname + "'",
 		otherInfo: false
 	};
-	localError.printExit(err);
+	printExit(err);
 }
 
 function tokenMap(sourceString: string, moduleName: string): Line[] {
@@ -188,19 +187,20 @@ function tokenMap(sourceString: string, moduleName: string): Line[] {
 
 	// check for unrecognized tokens
 	let isErr = false;
-	let errStack: localError.LocalError[] = [];
+	let errStack: Error[] = [];
 	lines.forEach(line => {
 		line.tokens.forEach(token => {
 			if (token.type === "other") {
-				const err: localError.LocalError = {
-					type: token.value.length > 1 ? localError.INVALID_IDENTIFIER : localError.UNRECOGNIZED_TOKEN,
+				const err: Error = {
+					type: token.value.length > 1 ? INVALID_IDENTIFIER : UNRECOGNIZED_TOKEN,
 					message: token.value.length > 1 ? token.value[0] === "\"" || token.value[0] == "'" ? "Unterminated string" : "Invalid identifier name" : "Unrecognized token",
 					otherInfo: true,
 					fromColumn: token.column,
 					fromLine: line.lineNumber,
 					toColumn: token.column + token.value.length,
 					toLine: line.lineNumber,
-					sourceLines: [lineToString(line)]
+					sourceLines: [lineToString(line)],
+					moduleName: moduleName
 				};
 				errStack.push(err);
 				isErr = true;
@@ -212,7 +212,7 @@ function tokenMap(sourceString: string, moduleName: string): Line[] {
 		if (lines[i].tokens.length === 0) lines.splice(i, 1);
 	}
 	if (isErr) {
-		localError.printStackExit(errStack);
+		printStackExit(errStack);
 	}
 	return lines;
 }
@@ -424,7 +424,7 @@ const syntaxRules: SyntaxRule[] = [
 ];
 
 function checkSyntaxRule(lines: Line[]) {
-	let errorStack: localError.LocalError[];
+	let errorStack: Error[];
 	errorStack = [];
 
 	for (let line of lines) {
@@ -440,15 +440,16 @@ function checkSyntaxRule(lines: Line[]) {
 
 				if (syntaxRule.after === tokens[i].value) {
 					if (i === tokens.length - 1 && !(syntaxRule.canFindSpecific.includes("\n"))) {
-						const err: localError.LocalError = {
-							type: localError.UNEXPECTED_END_OF_LINE,
+						const err: Error = {
+							type: UNEXPECTED_END_OF_LINE,
 							message: "Unexpected the end of the line",
 							otherInfo: true,
 							fromColumn: tokens[i].column,
 							toColumn: tokens[i].column + tokens[i].value.length,
 							fromLine: line.lineNumber,
 							toLine: line.lineNumber,
-							sourceLines: [lineToString(line)]
+							sourceLines: [lineToString(line)],
+							moduleName: line.fromModule
 						};
 						errorStack.push(err);
 					} else {
@@ -474,8 +475,8 @@ function checkSyntaxRule(lines: Line[]) {
 								}
 							}
 							if (!found) {
-								const err: localError.LocalError = {
-									type: localError.UNEXPECTED_TOKEN,
+								const err: Error = {
+									type: UNEXPECTED_TOKEN,
 									message: "Unexpected token '" + tokens[i + 1].value + "' after '" + tokens[i].value + "'",
 									otherInfo: true,
 									fromColumn: tokens[i + 1].column,
@@ -495,7 +496,7 @@ function checkSyntaxRule(lines: Line[]) {
 	}
 
 	if (errorStack.length !== 0)
-		localError.printStackExit(errorStack);
+		printStackExit(errorStack);
 }
 
 // -------------------------------------- RULES --------------------------------------
@@ -710,8 +711,8 @@ function handleGenericSyntaxError(line: Line) {
 		for (; i < line.tokens.length; i++) {
 			if (line.tokens[i].type === "identifier") {
 				if (getSymbol(line.tokens[i].value) === null) {
-					const err: localError.LocalError = {
-						type: localError.SYMBOL_NOT_DEFINED,
+					const err: Error = {
+						type: SYMBOL_NOT_DEFINED,
 						message: "'" + line.tokens[i].value + "' is not defined",
 						otherInfo: true,
 						fromColumn: line.tokens[i].column,
@@ -721,13 +722,13 @@ function handleGenericSyntaxError(line: Line) {
 						moduleName: line.fromModule,
 						sourceLines: [lineToString(line)]
 					};
-					localError.printExit(err);
+					printExit(err);
 				}
 			}
 		}
 	}
-	const err: localError.LocalError = {
-		type: localError.GENERIC_SYNTAX_ERROR,
+	const err: Error = {
+		type: GENERIC_SYNTAX_ERROR,
 		message: "Generic syntax error. Check the documentation for '" + line.tokens[0].value + "'.",
 		otherInfo: true,
 		fromColumn: 1,
@@ -737,7 +738,7 @@ function handleGenericSyntaxError(line: Line) {
 		moduleName: line.fromModule,
 		sourceLines: [lineToString(line)]
 	}
-	localError.printExit(err);
+	printExit(err);
 }
 
 // -- --
@@ -754,8 +755,8 @@ function evalExpressions(lines: Line[]) {
 
 				for (; j < line.tokens.length; j++) {
 					if (line.tokens[j].value === "$") {
-						const err: localError.LocalError = {
-							type: localError.$_REFERENCE_TO_NULL,
+						const err: Error = {
+							type: $_REFERENCE_TO_NULL,
 							message: "Cannot resolve $ address value",
 							otherInfo: true,
 							fromColumn: line.tokens[j].column,
@@ -765,7 +766,7 @@ function evalExpressions(lines: Line[]) {
 							moduleName: line.fromModule,
 							sourceLines: [lineToString(line)]
 						};
-						localError.printExit(err);
+						printExit(err);
 					}
 					if (
 						!(
@@ -833,8 +834,8 @@ function useId(tokens: Token[], scope: string[], source: Line[], line: Line) {
 				sLine = lineToString(line);
 			}
 		}
-		const err: localError.LocalError = {
-			type: localError.REDEFINITON,
+		const err: Error = {
+			type: REDEFINITON,
 			message: "Redefinition of " + symbolToString(sym),
 			otherInfo: true,
 			fromColumn: 1,
@@ -844,7 +845,7 @@ function useId(tokens: Token[], scope: string[], source: Line[], line: Line) {
 			moduleName: line.fromModule,
 			sourceLines: [sLine]
 		}
-		localError.printExit(err);
+		printExit(err);
 	}
 	symbolTable.push({
 		name: tokens[0].value,
@@ -877,8 +878,8 @@ function useAs(tokens: Token[], scope: string[], source: Line[], line: Line) {
 				sLine = lineToString(line);
 			}
 		}
-		const err: localError.LocalError = {
-			type: localError.REDEFINITON,
+		const err: Error = {
+			type: REDEFINITON,
 			message: "Redefinition of " + symbolToString(sym),
 			otherInfo: true,
 			fromColumn: 1,
@@ -888,7 +889,7 @@ function useAs(tokens: Token[], scope: string[], source: Line[], line: Line) {
 			moduleName: line.fromModule,
 			sourceLines: [sLine]
 		}
-		localError.printExit(err);
+		printExit(err);
 	}
 	symbolTable.push({
 		name: tokens[0].value,
@@ -992,8 +993,8 @@ function importHandler(tokens: Token[], scope: string[], source: Line[], line: L
 		p = path.resolve(mod.getCWD() + "\\" + tokens[0].value.substring(1, tokens[0].value.length - 1));
 
 	if (!fs.existsSync(p)) {
-		const err: localError.LocalError = {
-			type: localError.FILE_NOT_FOUND,
+		const err: Error = {
+			type: FILE_NOT_FOUND,
 			message: "The module '" + path.basename(p) + "' was not found",
 			otherInfo: true,
 			fromColumn: 0,
@@ -1003,7 +1004,7 @@ function importHandler(tokens: Token[], scope: string[], source: Line[], line: L
 			moduleName: line.fromModule,
 			sourceLines: [lineToString(source[line.lineNumber - 1])]
 		};
-		localError.printExit(err);
+		printExit(err);
 	}
 	if (mod.modulePoolContains(p)) return;
 	let sourceString = mod.read(p);
@@ -1214,7 +1215,8 @@ type Data = {
 	token: Token,
 	size: number,	// in bytes
 	position: number,
-	resolve: "symbol"
+	resolve: "symbol",
+	reference: "absolute" | "relative" | "zeroPage"
 	symbol: string
 } | {
 	token: Token,
@@ -1430,8 +1432,8 @@ function getLabels(lines: Line[]): Label[] {
 
 	lines.forEach(line => {
 		if (line.tokens.length > 0) {
-			const err: localError.LocalError = {
-				type: localError.INDENTATION_ERROR,
+			const err: Error = {
+				type: INDENTATION_ERROR,
 				message: "Expected and indented block",
 				otherInfo: true,
 				fromColumn: 0,
@@ -1441,7 +1443,7 @@ function getLabels(lines: Line[]): Label[] {
 				moduleName: line.fromModule,
 				sourceLines: [lineToString(line)]
 			};
-			localError.printExit(err);
+			printExit(err);
 		}
 	})
 	return labels;
@@ -1470,8 +1472,8 @@ function fits8bit(value: number) {
 function opcode(mnemonic: string, addressing: Addressing, line: Line | null): number {
 	let opc = getOpcode(mnemonic, addressing);
 	if (opc === null) {
-		const err: localError.LocalError = {
-			type: localError.UNRECOGNIZED_ADDRESSING_MODE,
+		const err: Error = {
+			type: UNRECOGNIZED_ADDRESSING_MODE,
 			message: `'${mnemonic}' does not support '${addressing}' addressing mode`,
 			otherInfo: true,
 			fromColumn: 0,
@@ -1481,7 +1483,7 @@ function opcode(mnemonic: string, addressing: Addressing, line: Line | null): nu
 			sourceLines: line == null ? [] : [lineToString(line)],
 			moduleName: line == null ? "" : line.fromModule
 		};
-		localError.printExit(err);
+		printExit(err);
 	}
 	return opc;
 }
@@ -1503,6 +1505,7 @@ function absolute(tokens: Token[], scope: string[], source: Line[], line: Line):
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "symbol",
 				symbol: tokens[1].value,
+				reference: "absolute",
 				size: 2
 			}
 			:
@@ -1533,6 +1536,7 @@ function absoluteIndexed(tokens: Token[], scope: string[], source: Line[], line:
 				token: tokens[1],
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "symbol",
+				reference: "absolute",
 				symbol: tokens[1].value,
 				size: 2
 			}
@@ -1649,6 +1653,7 @@ function relative(tokens: Token[], scope: string[], source: Line[], line: Line):
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "symbol",
 				symbol: tokens[1].value,
+				reference: "relative",
 				size: 2
 			}
 			:
@@ -1690,6 +1695,7 @@ function immediate(tokens: Token[], scope: string[], source: Line[], line: Line)
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "symbol",
 				symbol: tokens[1].value,
+				reference: "absolute",
 				size: 2
 			}
 			:
@@ -1733,6 +1739,7 @@ function indirect(tokens: Token[], scope: string[], source: Line[], line: Line):
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "symbol",
 				symbol: tokens[1].value,
+				reference: "absolute",
 				size: 2
 			}
 			:
@@ -1763,6 +1770,7 @@ function indirectIndexed(tokens: Token[], scope: string[], source: Line[], line:
 				token: tokens[1],
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "symbol",
+				reference: "absolute",
 				symbol: tokens[1].value,
 				size: 2
 			}
@@ -1782,8 +1790,8 @@ function zeroPage(tokens: Token[], scope: string[], source: Line[], line: Line):
 	let opc = opcode(tokens[0].value, "zeroPage", line);
 	if (tokens[1].type === "number") {
 		if (!fits8bit(Number(tokens[1].value))) {
-			const err: localError.LocalError = {
-				type: localError.VALUE_SIZE_OVERFLOW,
+			const err: Error = {
+				type: VALUE_SIZE_OVERFLOW,
 				message: "Zero page addrressing accepts 1 bytes pointers only",
 				otherInfo: true,
 				fromColumn: 0,
@@ -1793,7 +1801,7 @@ function zeroPage(tokens: Token[], scope: string[], source: Line[], line: Line):
 				sourceLines: [lineToString(line)],
 				moduleName: line.fromModule
 			}
-			localError.printExit(err);
+			printExit(err);
 		}
 	}
 	return [
@@ -1810,6 +1818,7 @@ function zeroPage(tokens: Token[], scope: string[], source: Line[], line: Line):
 				token: tokens[1],
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "symbol",
+				reference: "zeroPage",
 				symbol: tokens[1].value,
 				size: 2
 			}
@@ -1829,8 +1838,8 @@ function zeroPageIndexed(tokens: Token[], scope: string[], source: Line[], line:
 	let opc = opcode(tokens[0].value, "zeroPageIndexed", line);
 	if (tokens[1].type === "number") {
 		if (!fits8bit(Number(tokens[1].value))) {
-			const err: localError.LocalError = {
-				type: localError.VALUE_SIZE_OVERFLOW,
+			const err: Error = {
+				type: VALUE_SIZE_OVERFLOW,
 				message: "Zero page addrressing accepts 1 bytes pointers only",
 				otherInfo: true,
 				fromColumn: 0,
@@ -1840,7 +1849,7 @@ function zeroPageIndexed(tokens: Token[], scope: string[], source: Line[], line:
 				sourceLines: [lineToString(line)],
 				moduleName: line.fromModule
 			}
-			localError.printExit(err);
+			printExit(err);
 		}
 	}
 	return [
@@ -1857,6 +1866,7 @@ function zeroPageIndexed(tokens: Token[], scope: string[], source: Line[], line:
 				token: tokens[1],
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "symbol",
+				reference: "zeroPage",
 				symbol: tokens[1].value,
 				size: 2
 			}
@@ -1874,8 +1884,8 @@ function zeroPageIndexed(tokens: Token[], scope: string[], source: Line[], line:
 
 function call(tokens: Token[], scope: string[], source: Line[], line: Line) {
 	if (!stdcall) {
-		const err: localError.LocalError = {
-			type: localError.SYMBOL_NOT_DEFINED,
+		const err: Error = {
+			type: SYMBOL_NOT_DEFINED,
 			message: "'call' is not defined. You should add 'use stdcall'",
 			otherInfo: true,
 			fromColumn: 0,
@@ -1885,7 +1895,7 @@ function call(tokens: Token[], scope: string[], source: Line[], line: Line) {
 			sourceLines: [lineToString(line)],
 			moduleName: line.fromModule
 		};
-		localError.printExit(err);
+		printExit(err);
 	}
 	let i;
 	for (i = 0; i < source.length; i++) {
@@ -1911,8 +1921,8 @@ function syscall(tokens: Token[], scope: string[], source: Line[], line: Line) {
 	}
 
 	if (!found) {
-		const err: localError.LocalError = {
-			type: localError.SYMBOL_NOT_DEFINED,
+		const err: Error = {
+			type: SYMBOL_NOT_DEFINED,
 			message: `'${tokens[0].value}' is not defined. Check the manual for the std syscalls`,
 			otherInfo: true,
 			fromColumn: 0,
@@ -1922,7 +1932,7 @@ function syscall(tokens: Token[], scope: string[], source: Line[], line: Line) {
 			sourceLines: [lineToString(line)],
 			moduleName: line.fromModule
 		};
-		localError.printExit(err);
+		printExit(err);
 	}
 
 	let i;
@@ -2128,8 +2138,8 @@ function handleByteWordCast(label: Label) {
 						(!fits16bit(value) && ln.tokens[i].value === "word") ||
 						(!fits8bit(value) && ln.tokens[i].value === "byte")
 					) {
-						const err: localError.LocalError = {
-							type: localError.VALUE_SIZE_OVERFLOW,
+						const err: Error = {
+							type: VALUE_SIZE_OVERFLOW,
 							message: "The given value does not fit in a " + ln.tokens[i].value,
 							otherInfo: true,
 							fromColumn: ln.tokens[i + 1].column,
@@ -2139,7 +2149,7 @@ function handleByteWordCast(label: Label) {
 							sourceLines: [lineToString(ln)],
 							moduleName: ln.fromModule
 						}
-						localError.printExit(err);
+						printExit(err);
 					}
 					label.data.push({
 						token: ln.tokens[i + 1],
@@ -2165,8 +2175,8 @@ function handleReserveBytes(lb: Label) {
 			if (ln.tokens[i].value === "reserve" && ln.tokens[i + 1].type === "number") {
 				let value = Number(ln.tokens[i + 1].value);
 				if (value > 2 ** 15) {
-					const err: localError.LocalError = {
-						type: localError.VALUE_SIZE_OVERFLOW,
+					const err: Error = {
+						type: VALUE_SIZE_OVERFLOW,
 						message: "Cannot reserve more than 2¹⁵ bytes",
 						otherInfo: true,
 						fromColumn: ln.tokens[i + 1].column,
@@ -2176,7 +2186,7 @@ function handleReserveBytes(lb: Label) {
 						sourceLines: [lineToString(ln)],
 						moduleName: ln.fromModule
 					};
-					localError.printExit(err);
+					printExit(err);
 				}
 				for (let j = 0; j < value; j++) {
 					lb.data.push(
@@ -2250,23 +2260,23 @@ function handleSubLabelAccess(lb: Label) {
 function handleLiteralNumbers(lb: Label) {
 	for (let ln of lb.code) {
 		for (let tk of ln.tokens) {
-			if (tk.type !== "number") {
-				if (!(tk.type === "identifier" && tk.value === "")) {
-					const err: localError.LocalError = {
-						type: localError.UNEXPECTED_TOKEN,
-						message: "Unexpected '" + tk.value + "'",
-						otherInfo: true,
-						fromColumn: tk.column,
-						toColumn: tk.column + tk.value.length,
-						fromLine: ln.lineNumber,
-						toLine: ln.lineNumber,
-						sourceLines: [lineToString(ln)],
-						moduleName: ln.fromModule
-					};
-					localError.printExit(err);
-				}
-				continue;
-			}
+			// if (tk.type !== "number") {
+			// 	if (!(tk.type === "identifier" && tk.value === "")) {
+			// 		const err: LocalError = {
+			// 			type: UNEXPECTED_TOKEN,
+			// 			message: "Unexpected '" + tk.value + "'",
+			// 			otherInfo: true,
+			// 			fromColumn: tk.column,
+			// 			toColumn: tk.column + tk.value.length,
+			// 			fromLine: ln.lineNumber,
+			// 			toLine: ln.lineNumber,
+			// 			sourceLines: [lineToString(ln)],
+			// 			moduleName: ln.fromModule
+			// 		};
+			// 		printExit(err);
+			// 	}
+			// 	continue;
+			// }
 			let value = Number(tk.value);
 			lb.data.push({
 				token: tk,
@@ -2296,8 +2306,8 @@ function checkLabels(lables: Label[]) {
 
 	for (let lb of lables) {
 		if (names.includes(lb.name)) {
-			const err: localError.LocalError = {
-				type: localError.REDEFINITON,
+			const err: Error = {
+				type: REDEFINITON,
 				message: "Redefinition of '" + lb.name + "'",
 				otherInfo: true,
 				fromColumn: 0,
@@ -2307,7 +2317,7 @@ function checkLabels(lables: Label[]) {
 				sourceLines: [lb.name + ":"],
 				moduleName: lb.scope[0]
 			};
-			localError.printExit(err);
+			printExit(err);
 		}
 		names.push(lb.name);
 		if (lb.name === "_code") entry = true;
@@ -2315,8 +2325,8 @@ function checkLabels(lables: Label[]) {
 		subNames = [];
 		for (let sublb of lb.subLabels) {
 			if (subNames.includes(sublb.name)) {
-				const err: localError.LocalError = {
-					type: localError.REDEFINITON,
+				const err: Error = {
+					type: REDEFINITON,
 					message: "Redefinition of sublabel '" + sublb.name + "'",
 					otherInfo: true,
 					fromColumn: 1,
@@ -2326,19 +2336,19 @@ function checkLabels(lables: Label[]) {
 					sourceLines: ["\t" + sublb.name + ":"],
 					moduleName: sublb.scope[0]
 				};
-				localError.printExit(err);
+				printExit(err);
 			}
 			subNames.push(sublb.name);
 		}
 	}
 
 	if (!entry) {
-		const err: localError.LocalError = {
-			type: localError.SYMBOL_NOT_DEFINED,
+		const err: Error = {
+			type: SYMBOL_NOT_DEFINED,
 			message: "Undefined reference to _code entry point",
 			otherInfo: false
 		};
-		localError.printExit(err);
+		printExit(err);
 	}
 }
 
@@ -2361,8 +2371,202 @@ function resolveImmediates(lb: Label) {
 	}
 }
 
-function resolveAddresses(lb: Label) {
+function resolveSizes(labels: Label[]) {
+	for (let lb of labels) {
+		let tempSize = 0;
+		for (let d of lb.data) {
+			tempSize += d.size;
+		}
+		lb.size = tempSize;
+	}
+}
 
+function resolveAddresses(labels: Label[]) {
+	if (labels.length === 0) return;
+	for (let i = 0; i < labels.length; i++) {
+		if (labels[i].name === "_code") {
+			if (labels[i].address === "unresolved") {
+				labels[i].address = 0;
+			}
+			if (i != 0) {
+				let code = labels[i];
+				labels.splice(i, 1);
+				labels.unshift(code);
+			}
+		}
+	}
+
+	let addressMap: Array<{ index: number, label: Label }> = [];
+
+	for (let i = 0; i < labels.length; i++) {
+		if (labels[i].address != "unresolved") {
+			addressMap.push({ index: i, label: labels[i] });
+		}
+	}
+
+	addressMap = addressMap.sort((a, b) => a > b ? 1 : -1);
+
+	for (let i = 0; i < labels.length; i++) {
+		for (let a of addressMap) {
+			if (i == a.index) {
+				let tempLb = labels[i];
+				labels[i] = addressMap[0].label;
+				labels[addressMap[0].index] = tempLb;
+				addressMap.shift();
+			}
+		}
+	}
+
+	if (labels[0].name != "_code") {
+		const err: Error = {
+			type: INVALID_LABEL_ORIGIN,
+			message: "_code must be at the first available address. The origin of '" + labels[0].name + "' is before that of _code",
+			otherInfo: false
+		};
+		printExit(err);
+	}
+
+	let labelBefore = labels[0];
+
+	for (let i = 1; i < labels.length; i++) {
+		if (labels[i].address == "unresolved") {
+			labels[i].address = (labelBefore.address as number) + (labelBefore.size as number) + 1;
+		} else {
+			if ((labelBefore.address as number) + (labelBefore.size as number) >= (labels[i].address as number)) {
+				const err: Error = {
+					type: LABEL_ORIGIN_OVERLAP,
+					message: "Label '" + labels[i].name + "' overlaps '" + labelBefore.name + "'",
+					otherInfo: false
+				};
+				printExit(err);
+			}
+		}
+	}
+
+	for (let lb of labels) {
+		for (let d of lb.data) {
+			if (d.resolve === "symbol") {
+				setAddressFromSymbol(lb.scope, d.symbol, labels, d, d.reference);
+			}
+		}
+	}
+
+}
+
+function existSymbol(symbol: string, labels: Label[]): boolean {
+	let scope = symbol.split(".");
+	if (scope.length == 1) {
+		for (let label of labels) {
+			if (label.name === symbol) {
+				return true;
+			}
+		}
+		return false;
+	}
+	else if (scope.length == 2) {
+		for (let label of labels) {
+			if (label.name === scope[0]) {
+				for (let sublb of label.subLabels) {
+					if (sublb.name === scope[1]) {
+						return true;
+					}
+				}
+			}
+		}
+		return false;
+	}
+	return false;
+}
+
+function handleIdentifiers(labels: Label[]) {
+	for (let lb of labels) {
+		for (let ln of lb.code) {
+			for (let tk of ln.tokens) {
+				if (tk.type === "identifier") {
+					if (!existSymbol(tk.value, labels)) {
+						const err: Error = {
+							type: SYMBOL_NOT_DEFINED,
+							message: "The symbol '" + tk.value + "' is not defined",
+							otherInfo: true,
+							fromColumn: tk.column,
+							toColumn: tk.column + tk.value.length,
+							fromLine: ln.lineNumber,
+							toLine: ln.lineNumber,
+							sourceLines: [lineToString(ln)],
+							moduleName: ln.fromModule
+						};
+						printExit(err);
+					}
+				}
+			}
+		}
+	}
+}
+
+function setAddressFromSymbol(accessFrom: string[], symbol: string, labels: Label[], data: Data, reference: "absolute" | "zeroPage" | "relative") {
+	let scope = symbol.split(".");
+	let value = 0;
+	if (scope.length == 1) {
+		for (let label of labels) {
+			if (label.name === symbol) {
+				if (label.isLocal) {
+					if (label.scope[0] !== accessFrom[0]) {
+						const err: Error = {
+							type: LOCAL_SYMBOL_ACCESS,
+							message: "Cannot access to local '" + symbol + "'. Remove the local statement",
+							otherInfo: false,
+							moduleName: accessFrom[0]
+						};
+						printExit(err);
+					}
+				}
+				if (reference === "absolute") {
+					data.resolve = "value";
+					// @ts-ignore
+					data.value = label.address;
+				}
+			}
+		}
+	}
+	else {
+		for (let label of labels) {
+			if (label.name === scope[0]) {
+				for (let sublb of label.subLabels) {
+					if (sublb.name === scope[1]) {
+						if (sublb.isLocal) {
+							if (sublb.scope[0] !== accessFrom[0] && sublb.scope[1] !== accessFrom[1]) {
+								const err: Error = {
+									type: LOCAL_SYMBOL_ACCESS,
+									message: "Cannot access to local '" + symbol + "'. Remove the local statement",
+									otherInfo: false,
+									moduleName: accessFrom[0]
+								};
+								printExit(err);
+							}
+						}
+						data.resolve = "value";
+						if (reference === "absolute") {
+							// @ts-ignore
+							data.value = sublb.address;
+						} else if (reference === "zeroPage") {
+							// @ts-ignore
+							data.value = (sublb.address >> 8);
+							if (!fits8bit(sublb.address as number)) {
+								const n: Note = {
+									message: "Zero page addressing use only 1 byte. The referred address of '" + symbol + "' has been modified to fit 8 bits",
+									otherInfo: false,
+									moduleName: accessFrom[0]
+								};
+								note(n);
+							}
+						} else {
+
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
 function setData(labels: Label[]) {
@@ -2382,6 +2586,7 @@ function setData(labels: Label[]) {
 			handleMacros(sublb);
 		}
 	}
+	handleIdentifiers(labels);
 
 	for (let lb of labels) {
 		let rules: Rule[] = [];
@@ -2415,15 +2620,16 @@ function setData(labels: Label[]) {
 		}
 	}
 
+
 	for (let lb of labels) {
 		resolveImmediates(lb);
-		resolveAddresses(lb);
 		for (let sublb of lb.subLabels) {
-			resolveImmediates(lb);
-			resolveAddresses(lb);
+			resolveImmediates(sublb);
 		}
-
 	}
+
+	resolveSizes(labels);
+	resolveAddresses(labels);
 	debugLabelDataHexDump(labels);
 }
 
@@ -2432,12 +2638,12 @@ function setBinary(labels: Label[]) {
 	// for (let lb of labels) {
 	// 	for (let d of lb.data) {
 	// 		if (d.resolve != "value") {
-	// 			const err: localError.LocalError = {
-	// 				type: localError.UNDEFINED_PTR_REFERENCE,
+	// 			const err: LocalError = {
+	// 				type: UNDEFINED_PTR_REFERENCE,
 	// 				message: "An error occurred while retriving the pointer reference in label '" + lb.name + "'",
 	// 				otherInfo: false
 	// 			};
-	// 			localError.printExit(err);
+	// 			printExit(err);
 	// 		}
 	// 		if (d.resolve === "value")
 	// 			lb.binary.push(d.value);

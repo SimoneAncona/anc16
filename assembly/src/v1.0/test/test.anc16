@@ -35,6 +35,6 @@ struct:	; posso creare delle strutture dati
 	global nome: "giovanni" reserve 10
 	global cognome: "parodi" reserve sus
 	global eta: word 25
-	global lolly: word 4
+	global lolly: altra_func
 
 

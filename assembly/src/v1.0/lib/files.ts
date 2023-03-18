@@ -19,7 +19,7 @@ export function read(fileName: string): string {
 	try {
 		sourceFile = fs.readFileSync(fileName);
 	} catch (e) {
-		let err: localError.LocalError;
+		let err: localError.Error;
 		if (e.code == "EISDIR") {
 			err = {
 				type: localError.FS_ERROR,
@@ -46,7 +46,7 @@ export function write(fileName: string, buff: Uint8Array): void {
 		else
 			fs.writeFileSync(fileName, buff, { flag: "wx" });
 	} catch {
-		const err: localError.LocalError = {
+		const err: localError.Error = {
 			type: localError.FILE_ALREDY_EXIST,
 			message: "The file or the directory '" + fileName + "' already exist",
 			otherInfo: false
