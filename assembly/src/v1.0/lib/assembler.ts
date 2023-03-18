@@ -7,6 +7,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { before } from "node:test";
 import { Addressing, getOpcode } from "./isa";
+import { HeaderSetter } from "./headerSetter";
 
 colors.enable();
 const LINE_PADDING_BYTE_OFFSET = 100000;
@@ -84,7 +85,10 @@ export function assemble
 			zerosToCode: false,
 			setHeader: false,
 			setSymbolRef: false,
-			getSymbolRef: false
+			getSymbolRef: false,
+			accessFileSystem: false,
+			accessVideoMem: false,
+			highPrivileges: false
 		}
 	): {
 		bin: Uint8Array,
@@ -93,13 +97,36 @@ export function assemble
 	console.time("Assembly finished in");
 	let lines = parse(sourceString, moduleName);
 	let labels = getLabels(lines);
+	let symbolRef: Array<{ name: string, address: number }> = [];
+
 	setData(labels);
+	for (let lb of labels) {
+		if (lb.address === "unresolved") unresolvedAddress(lb.name);
+		symbolRef.push({ name: lb.name, address: lb.address as number });
+	}
 	setBinary(labels);
+
 	process.stdout.write("✓ ".green);
 	console.timeEnd("Assembly finished in");
+	// let bin = getBinary(lables);
+	let header = new HeaderSetter()
+		.setAccessFileSystem(options.accessFileSystem)
+		.setAccessVideoMem(options.accessVideoMem)
+		.setHighPrivileges(options.highPrivileges)
+		.setVersion(1)
+		.generateHeader()
 	return { bin: new Uint8Array(), ref: "" };
 }
 // --- ---
+
+function unresolvedAddress(lbname: string) {
+	const err: localError.LocalError = {
+		type: localError.UNDEFINED_PTR_REFERENCE,
+		message: "Cannot resolve the address of '" + lbname + "'",
+		otherInfo: false
+	};
+	localError.printExit(err);
+}
 
 function tokenMap(sourceString: string, moduleName: string): Line[] {
 	sourceString = sourceString.replace(/;.*/gmi, "");		// removing all comments
@@ -1273,7 +1300,7 @@ function label(tokens: Token[], scope: string[], source: Line[], line: Line) {
 		name: tokens[0].value,
 		code: lines,
 		data: [],
-		binary: new Uint8Array(),
+		binary: new Uint8Array,
 		subLabels: [],
 		isLocal: false,
 		size: "unresolved",
@@ -1299,7 +1326,7 @@ function localLabel(tokens: Token[], scope: string[], source: Line[], line: Line
 		name: tokens[0].value,
 		code: lines,
 		data: [],
-		binary: new Uint8Array(),
+		binary: new Uint8Array,
 		subLabels: [],
 		isLocal: true,
 		size: "unresolved",
@@ -1440,7 +1467,7 @@ function fits8bit(value: number) {
 	)
 }
 
-function opcode(mnemonic: string, addressing: Addressing, line: Line): number {
+function opcode(mnemonic: string, addressing: Addressing, line: Line | null): number {
 	let opc = getOpcode(mnemonic, addressing);
 	if (opc === null) {
 		const err: localError.LocalError = {
@@ -1448,11 +1475,11 @@ function opcode(mnemonic: string, addressing: Addressing, line: Line): number {
 			message: `'${mnemonic}' does not support '${addressing}' addressing mode`,
 			otherInfo: true,
 			fromColumn: 0,
-			fromLine: line.lineNumber,
+			fromLine: line == null ? 0 : line.lineNumber,
 			toColumn: 100,
-			toLine: line.lineNumber,
-			sourceLines: [lineToString(line)],
-			moduleName: line.fromModule
+			toLine: line == null ? 0 : line.lineNumber,
+			sourceLines: line == null ? [] : [lineToString(line)],
+			moduleName: line == null ? "" : line.fromModule
 		};
 		localError.printExit(err);
 	}
@@ -2315,6 +2342,29 @@ function checkLabels(lables: Label[]) {
 	}
 }
 
+function resolveImmediates(lb: Label) {
+	for (let i = 0; i < lb.data.length; i++) {
+		let data = lb.data[i];
+		if (data.resolve === "instruction") {
+			if (lb.data[i + 1].size == 1) {
+				let v = opcode(data.instruction, "immediate1", null);
+				lb.data[i].resolve = "value";
+				// @ts-ignore
+				lb.data[i].value = v;
+			} else if (lb.data[i + 1].size == 2) {
+				let v = opcode(data.instruction, "immediate2", null);
+				lb.data[i].resolve = "value";
+				// @ts-ignore
+				lb.data[i].value = v;
+			}
+		}
+	}
+}
+
+function resolveAddresses(lb: Label) {
+
+}
+
 function setData(labels: Label[]) {
 	checkLabels(labels);
 
@@ -2364,14 +2414,47 @@ function setData(labels: Label[]) {
 			removeNull(lb);
 		}
 	}
+
+	for (let lb of labels) {
+		resolveImmediates(lb);
+		resolveAddresses(lb);
+		for (let sublb of lb.subLabels) {
+			resolveImmediates(lb);
+			resolveAddresses(lb);
+		}
+
+	}
 	debugLabelDataHexDump(labels);
 }
 
 // ------------------------------ BINARY ------------------------------
 function setBinary(labels: Label[]) {
-
+	// for (let lb of labels) {
+	// 	for (let d of lb.data) {
+	// 		if (d.resolve != "value") {
+	// 			const err: localError.LocalError = {
+	// 				type: localError.UNDEFINED_PTR_REFERENCE,
+	// 				message: "An error occurred while retriving the pointer reference in label '" + lb.name + "'",
+	// 				otherInfo: false
+	// 			};
+	// 			localError.printExit(err);
+	// 		}
+	// 		if (d.resolve === "value")
+	// 			lb.binary.push(d.value);
+	// 	}
+	// }
 }
 
+function getBinary(lables: Label[]): Uint8Array {
+	let len = 0;
+	for (let lb of lables) {
+		len += lb.binary.length;
+	}
+	let buffer = new Uint8Array(len);
+	return buffer;
+}
+
+// --------------------------------------------------------------------
 
 // DEBUG TOOLS
 

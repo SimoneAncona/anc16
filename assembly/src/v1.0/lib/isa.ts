@@ -12,6 +12,8 @@ export type Addressing =
 	"baseHighRegister" |
 	"baseLowRegister" |
 	"immediate" |
+	"immediate1" |
+	"immediate2" |
 	"implied" |
 	"indexRegister" |
 	"indirect" |
@@ -27,6 +29,10 @@ export function getOpcode(mnemonic: string, addressing: Addressing): number {
 		if (ins.mnemonic.toLowerCase() == mnemonic.toLowerCase()) {
 			for (let opc of ins.opcodes) {
 				if (opc.addressingMode === addressing) return Number(opc.opcode);
+				let immSize = 0;
+				if (addressing === "immediate1") immSize = 1;
+				else if (addressing === "immediate2") immSize = 2;
+				if (opc.addressingMode === "immediate" && opc.argNBytes === immSize) return Number(opc.opcode);
 			};
 		}
 	};

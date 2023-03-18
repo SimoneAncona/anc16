@@ -21,6 +21,7 @@ export const
 	INDENTATION_ERROR: LocalErrorType = { name: "SyntaxError", code: 0x0205 },
 	REDEFINITON: LocalErrorType = { name: "SymbolError", code: 0x0300 },
 	$_REFERENCE_TO_NULL: LocalErrorType = { name: "ReferenceError", code: 0x0400 },
+	UNDEFINED_PTR_REFERENCE: LocalErrorType = { name: "ReferenceError", code: 0x0401 },
 	VALUE_SIZE_OVERFLOW: LocalErrorType = { name: "ValueError", code: 0x500 },
 	UNRECOGNIZED_ADDRESSING_MODE: LocalErrorType = { name: "ValueError", code: 0x501 },
 	FS_ERROR: LocalErrorType = { name: "FSError", code: 0x0600 }
