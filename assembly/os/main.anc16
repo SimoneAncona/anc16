@@ -1,8 +1,0 @@
-USE STDCALL
-IMPORT syslib
-
-ORG x0100
-_code:
-
-
-ORG

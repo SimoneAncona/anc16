@@ -1,9 +1,0 @@
-TSB
-PSH
-LDI # 0
-LDAH addr, I
-PSH AH
-INI
-CMPI size
-JZC #-4
-JMP B
