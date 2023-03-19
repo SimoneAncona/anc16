@@ -9,7 +9,7 @@ colors.enable();
 const help =
 	`
 Usage:
-	command.js sourceFile ${"[outputFile]".yellow}
+	assembler sourceFile ${"[outputFile]".yellow}
 Flags:
 	${"-h".cyan}		Set the standard header for executable files in ANC16
 	${"--h-draw".cyan}	Set authorization 'accessVideoMem' header flag
