@@ -34,13 +34,22 @@ type TokenRegex = {
 	regularExpression: RegExp
 }
 
+const SPECIAL_REGEXP = "\\+|-|\\*|\\/|\\$|,|:|#|\\(|\\)|\\.|\\[|\\]";
+const SPACES = " |$|\\t"
+
+function concatRegexp(reg: RegExp, exp: RegExp) {
+	let flags = reg.flags + exp.flags;
+	flags = Array.from(new Set(flags.split(''))).join();
+	return new RegExp(reg.source + exp.source, flags);
+}
+
 const tokenTypes: TokenRegex[] = [
 	{ name: "string", regularExpression: /".*"/gmi },
 	{ name: "reserved", regularExpression: /\b(use|used|as|stdcall|import|org|word|byte|if|else|elif|endif|sizeof|reserve|call|syscall|local|global|not|syslib)\b/gmi },
-	{ name: "instruction", regularExpression: /\b(ada|adb|ana|anb|aret|clc|cld|cli|clo|cls|cmah|cmbh|cmpa|cmpb|cmpi|cpuid|dea|deb|dei|dej|ina|inb|ini|inj|jcc|jcs|jeq|jmp|jnc|jne|jns|joc|jos|kill|lda|ldah|ldal|ldb|ldbh|ldbl|lddr|ldi|ldj|ldsp|limh|liml|lemh|leml|ldsr|msb|nop|ora|orb|psh|read|rest|ret|sed|sei|semh|seml|ses|shl|shr|simh|siml|stah|stb|stbh|sti|stj|stpc|stsr|sua|sub|sys|tab|tabh|tabl|tadr|taemh|taeml|tahj|tai|taimh|taiml|tba|tbah|tbal|tbhj|tbi|tisp|tspb|wrte|wrti|xora|xorb)(?=\+|-|\*|\/|\$|,|:|#|\(|\)|\.| |$|\t)/gmi },
-	{ name: "number", regularExpression: /\b(\-?(0x[0-9a-fA-F]+|\d+|0o[0-7]+|0b[0-1]+))(?=\+|-|\*|\/|\$|,|:|#|\(|\)|\.| |$|\t)/gmi },
-	{ name: "identifier", regularExpression: /\b[a-zA-Z_][a-zA-Z0-9_]*(?=\+|-|\*|\/|\$|,|:|#|\(|\)|\.| |$|\t)/gm },
-	{ name: "special", regularExpression: /(\+|-|\*|\/|\$|,|:|#|\(|\)|\.)/gmi },
+	{ name: "instruction", regularExpression: new RegExp(`\\b(ada|adb|ana|anb|aret|clc|cld|cli|clo|cls|cmah|cmbh|cmpa|cmpb|cmpi|cpuid|dea|deb|dei|dej|ina|inb|ini|inj|jcc|jcs|jeq|jmp|jnc|jne|jns|joc|jos|kill|lda|ldah|ldal|ldb|ldbh|ldbl|lddr|ldi|ldj|ldsp|limh|liml|lemh|leml|ldsr|msb|nop|ora|orb|psh|read|rest|ret|sed|sei|semh|seml|ses|shl|shr|simh|siml|stah|stb|stbh|sti|stj|stpc|stsr|sua|sub|sys|tab|tabh|tabl|tadr|taemh|taeml|tahj|tai|taimh|taiml|tba|tbah|tbal|tbhj|tbi|tisp|tspb|wrte|wrti|xora|xorb)(?=${SPECIAL_REGEXP + "|" + SPACES})`, "gmi") },
+	{ name: "number", regularExpression: new RegExp(`\\b(\\-?(0x[0-9a-fA-F]+|\\d+|0o[0-7]+|0b[0-1]+))(?=${SPECIAL_REGEXP + "|" + SPACES})`, "gmi") },
+	{ name: "identifier", regularExpression: new RegExp(`\\b[a-zA-Z_][a-zA-Z0-9_]*(?=${SPECIAL_REGEXP + "|" + SPACES})`, "gmi") },
+	{ name: "special", regularExpression: new RegExp(SPECIAL_REGEXP, "gmi") },
 	{ name: "other", regularExpression: /\S+/gm },
 ]
 
@@ -75,9 +84,35 @@ function parse(sourceString: string, moduleName: string): Line[] {
 	let lines;
 
 	lines = tokenMap(sourceString, moduleName);
+	parseNumbers(lines);
 	checkSyntaxRule(lines);
 	preProcess(lines, moduleName);
 	return lines;
+}
+
+function parseNumbers(lines: Line[]) {
+	for (let l of lines) {
+		for (let i = 1; i < l.tokens.length; i++) {
+			if (l.tokens[i].type === "number") {
+				if (i == 1 && l.tokens[i - 1].value === "+") {
+					l.tokens.splice(i - 1, 1);
+				}
+				else if (i == 1 && l.tokens[i - 1].value === "-") {
+					l.tokens[i].value = "-" + l.tokens[i].value;
+					l.tokens.splice(i - 1, 1);
+				} else if (l.tokens[i - 1].value === "-" || l.tokens[i - 1].value === "+") {
+					let neg = l.tokens[i - 1].value === "-";
+					if (
+						l.tokens[i - 2].value === "*"
+						|| l.tokens[i - 2].value === "/"
+					) {
+						if (neg) l.tokens[i].value = "-" + l.tokens[i].value;
+						l.tokens.splice(i - 1, 1);
+					}
+				}
+			}
+		}
+	}
 }
 
 // --- MAIN FUNCTION ---
@@ -304,7 +339,7 @@ const syntaxRules: SyntaxRule[] = [
 		specific: false,
 		after: "number",
 		canFindOnly: [],
-		canFindSpecific: ["-", "+", "*", "/", "\n", ")"],
+		canFindSpecific: ["-", "+", "*", "/", "\n", ")", ","],
 		pair: false
 	},
 	{
@@ -389,28 +424,28 @@ const syntaxRules: SyntaxRule[] = [
 		specific: true,
 		after: "+",
 		canFindOnly: ["number", "identifier"],
-		canFindSpecific: ["(", "$"],
+		canFindSpecific: ["(", "$", "-", "+"],
 		pair: false
 	},
 	{
 		specific: true,
 		after: "-",
 		canFindOnly: ["number", "identifier"],
-		canFindSpecific: ["(", "$"],
+		canFindSpecific: ["(", "$", "-", "+"],
 		pair: false
 	},
 	{
 		specific: true,
 		after: "*",
 		canFindOnly: ["number", "identifier"],
-		canFindSpecific: ["(", "$"],
+		canFindSpecific: ["(", "$", "-", "+"],
 		pair: false
 	},
 	{
 		specific: true,
 		after: "/",
 		canFindOnly: ["number", "identifier"],
-		canFindSpecific: ["(", "$"],
+		canFindSpecific: ["(", "$", "-", "+"],
 		pair: false
 	},
 	{
@@ -424,7 +459,7 @@ const syntaxRules: SyntaxRule[] = [
 		specific: true,
 		after: "as",
 		canFindOnly: ["number", "identifier"],
-		canFindSpecific: ["(", "$"],
+		canFindSpecific: ["(", "$", "-", "+"],
 		pair: false
 	},
 	{
@@ -460,7 +495,7 @@ const syntaxRules: SyntaxRule[] = [
 		specific: false,
 		after: "instruction",
 		canFindOnly: ["number", "identifier"],
-		canFindSpecific: ["#", "word", "byte", "\n"],
+		canFindSpecific: ["#", "word", "byte", "\n", "(", "*", "["],
 		pair: false
 	}
 ];
@@ -823,13 +858,29 @@ function evalExpressions(lines: Line[]) {
 					) break;
 					exp += line.tokens[j].value;
 				}
-				let value = String(eval(exp));
+				let value;
+				try {
+					value = String(eval(exp));
+				} catch {
+					const err: Error = {
+						type: GENERIC_SYNTAX_ERROR,
+						message: "An error occurred while evaluating math expression",
+						otherInfo: true,
+						fromColumn: line.tokens[i].column,
+						toColumn: line.tokens[j].column,
+						fromLine: line.lineNumber,
+						toLine: line.lineNumber,
+						sourceLines: [lineToString(line)],
+						moduleName: line.fromModule
+					};
+					printExit(err);
+				}
 				line.tokens[i] = {
 					column: line.tokens[i].column,
 					value: value,
 					type: "number"
 				};
-				line.tokens.splice(i + 1, j);
+				line.tokens.slice(i + 1, j);
 			}
 			i++;
 		}
@@ -1555,7 +1606,7 @@ function absolute(tokens: Token[], scope: string[], source: Line[], line: Line):
 				token: tokens[1],
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "value",
-				value: Number(tokens[1].value),
+				value: toNumber(tokens[1].value),
 				size: 2,
 				forced: true
 			}
@@ -1587,7 +1638,7 @@ function absoluteIndexed(tokens: Token[], scope: string[], source: Line[], line:
 				token: tokens[1],
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "value",
-				value: Number(tokens[1].value),
+				value: toNumber(tokens[1].value),
 				size: 2,
 				forced: true
 			}
@@ -1595,7 +1646,7 @@ function absoluteIndexed(tokens: Token[], scope: string[], source: Line[], line:
 }
 
 function accumulatorHighRegister(tokens: Token[], scope: string[], source: Line[], line: Line): Data[] {
-	let opc = opcode(tokens[0].value, "implied", line);
+	let opc = opcode(tokens[0].value, "accumulatorHighRegister", line);
 	return [{
 		token: tokens[0],
 		position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[0].column,
@@ -1607,7 +1658,7 @@ function accumulatorHighRegister(tokens: Token[], scope: string[], source: Line[
 }
 
 function accumulatorLowRegister(tokens: Token[], scope: string[], source: Line[], line: Line): Data[] {
-	let opc = opcode(tokens[0].value, "implied", line);
+	let opc = opcode(tokens[0].value, "accumulatorLowRegister", line);
 	return [{
 		token: tokens[0],
 		position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[0].column,
@@ -1619,7 +1670,7 @@ function accumulatorLowRegister(tokens: Token[], scope: string[], source: Line[]
 }
 
 function accumulatorRegister(tokens: Token[], scope: string[], source: Line[], line: Line): Data[] {
-	let opc = opcode(tokens[0].value, "implied", line);
+	let opc = opcode(tokens[0].value, "accumulatorRegister", line);
 	return [{
 		token: tokens[0],
 		position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[0].column,
@@ -1631,7 +1682,7 @@ function accumulatorRegister(tokens: Token[], scope: string[], source: Line[], l
 }
 
 function baseHighRegister(tokens: Token[], scope: string[], source: Line[], line: Line): Data[] {
-	let opc = opcode(tokens[0].value, "implied", line);
+	let opc = opcode(tokens[0].value, "baseHighRegister", line);
 	return [{
 		token: tokens[0],
 		position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[0].column,
@@ -1643,7 +1694,7 @@ function baseHighRegister(tokens: Token[], scope: string[], source: Line[], line
 }
 
 function baseLowRegister(tokens: Token[], scope: string[], source: Line[], line: Line): Data[] {
-	let opc = opcode(tokens[0].value, "implied", line);
+	let opc = opcode(tokens[0].value, "baseLowRegister", line);
 	return [{
 		token: tokens[0],
 		position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[0].column,
@@ -1655,7 +1706,7 @@ function baseLowRegister(tokens: Token[], scope: string[], source: Line[], line:
 }
 
 function baseRegister(tokens: Token[], scope: string[], source: Line[], line: Line): Data[] {
-	let opc = opcode(tokens[0].value, "implied", line);
+	let opc = opcode(tokens[0].value, "baseRegister", line);
 	return [{
 		token: tokens[0],
 		position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[0].column,
@@ -1667,7 +1718,7 @@ function baseRegister(tokens: Token[], scope: string[], source: Line[], line: Li
 }
 
 function indexRegister(tokens: Token[], scope: string[], source: Line[], line: Line): Data[] {
-	let opc = opcode(tokens[0].value, "implied", line);
+	let opc = opcode(tokens[0].value, "indexRegister", line);
 	return [{
 		token: tokens[0],
 		position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[0].column,
@@ -1696,15 +1747,15 @@ function relative(tokens: Token[], scope: string[], source: Line[], line: Line):
 				resolve: "symbol",
 				symbol: tokens[1].value,
 				reference: "relative",
-				size: 2
+				size: 1
 			}
 			:
 			{
 				token: tokens[1],
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "value",
-				value: Number(tokens[1].value),
-				size: 2,
+				value: toNumber(tokens[1].value),
+				size: 1,
 				forced: true
 			}
 	];
@@ -1745,7 +1796,7 @@ function immediate(tokens: Token[], scope: string[], source: Line[], line: Line)
 				token: tokens[1],
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "value",
-				value: Number(tokens[1].value),
+				value: toNumber(tokens[1].value),
 				size: 2,
 				forced: false
 			}
@@ -1789,7 +1840,7 @@ function indirect(tokens: Token[], scope: string[], source: Line[], line: Line):
 				token: tokens[1],
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "value",
-				value: Number(tokens[1].value),
+				value: toNumber(tokens[1].value),
 				size: 2,
 				forced: true
 			}
@@ -1821,7 +1872,7 @@ function indirectIndexed(tokens: Token[], scope: string[], source: Line[], line:
 				token: tokens[1],
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "value",
-				value: Number(tokens[1].value),
+				value: toNumber(tokens[1].value),
 				size: 2,
 				forced: true
 			}
@@ -1831,7 +1882,7 @@ function indirectIndexed(tokens: Token[], scope: string[], source: Line[], line:
 function zeroPage(tokens: Token[], scope: string[], source: Line[], line: Line): Data[] {
 	let opc = opcode(tokens[0].value, "zeroPage", line);
 	if (tokens[1].type === "number") {
-		if (!fits8bit(Number(tokens[1].value))) {
+		if (!fits8bit(toNumber(tokens[1].value))) {
 			const err: Error = {
 				type: VALUE_SIZE_OVERFLOW,
 				message: "Zero page addrressing accepts 1 bytes pointers only",
@@ -1869,7 +1920,7 @@ function zeroPage(tokens: Token[], scope: string[], source: Line[], line: Line):
 				token: tokens[1],
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "value",
-				value: Number(tokens[1].value),
+				value: toNumber(tokens[1].value),
 				size: 2,
 				forced: true
 			}
@@ -1879,7 +1930,7 @@ function zeroPage(tokens: Token[], scope: string[], source: Line[], line: Line):
 function zeroPageIndexed(tokens: Token[], scope: string[], source: Line[], line: Line): Data[] {
 	let opc = opcode(tokens[0].value, "zeroPageIndexed", line);
 	if (tokens[1].type === "number") {
-		if (!fits8bit(Number(tokens[1].value))) {
+		if (!fits8bit(toNumber(tokens[1].value))) {
 			const err: Error = {
 				type: VALUE_SIZE_OVERFLOW,
 				message: "Zero page addrressing accepts 1 bytes pointers only",
@@ -1917,7 +1968,7 @@ function zeroPageIndexed(tokens: Token[], scope: string[], source: Line[], line:
 				token: tokens[1],
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "value",
-				value: Number(tokens[1].value),
+				value: toNumber(tokens[1].value),
 				size: 2,
 				forced: true
 			}
@@ -1965,7 +2016,7 @@ function syscall(tokens: Token[], scope: string[], source: Line[], line: Line) {
 	if (!found) {
 		const err: Error = {
 			type: SYMBOL_NOT_DEFINED,
-			message: `'${tokens[0].value}' is not defined. Check the manual for the std syscalls`,
+			message: `'${tokens[0].value}' is not defined.Check the manual for the std syscalls`,
 			otherInfo: true,
 			fromColumn: 0,
 			toColumn: 100,
@@ -2014,24 +2065,6 @@ const macroRules: RuleInterface[] = [
 
 const addressingRules: RuleInterface[] = [
 	{
-		name: "absolute",
-		rule: [
-			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
-			{ genericToken: true, tokenTypes: ["identifier", "number"], isArgument: true }
-		],
-		handleRule: absolute
-	},
-	{
-		name: "absoluteIndexed",
-		rule: [
-			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
-			{ genericToken: true, tokenTypes: ["identifier", "number"], isArgument: true },
-			{ genericToken: false, value: "," },
-			{ genericToken: false, value: "I" },
-		],
-		handleRule: absoluteIndexed
-	},
-	{
 		name: "accumulatorHighRegister",
 		rule: [
 			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
@@ -2045,7 +2078,7 @@ const addressingRules: RuleInterface[] = [
 			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
 			{ genericToken: false, value: "AL" }
 		],
-		handleRule: accumulatorRegister
+		handleRule: accumulatorLowRegister
 	},
 	{
 		name: "accumulatorRegister",
@@ -2053,7 +2086,7 @@ const addressingRules: RuleInterface[] = [
 			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
 			{ genericToken: false, value: "A" }
 		],
-		handleRule: accumulatorLowRegister
+		handleRule: accumulatorRegister
 	},
 	{
 		name: "baseHighRegister",
@@ -2115,19 +2148,12 @@ const addressingRules: RuleInterface[] = [
 		handleRule: immediate
 	},
 	{
-		name: "implied",
-		rule: [
-			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
-		],
-		handleRule: implied
-	},
-	{
 		name: "indirect",
 		rule: [
 			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
-			{ genericToken: false, value: "(" },
+			{ genericToken: false, value: "[" },
 			{ genericToken: true, tokenTypes: ["identifier", "number"], isArgument: true },
-			{ genericToken: false, value: ")" },
+			{ genericToken: false, value: "]" },
 		],
 		handleRule: indirect
 	},
@@ -2135,9 +2161,9 @@ const addressingRules: RuleInterface[] = [
 		name: "indirectIndexed",
 		rule: [
 			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
-			{ genericToken: false, value: "(" },
+			{ genericToken: false, value: "[" },
 			{ genericToken: true, tokenTypes: ["identifier", "number"], isArgument: true },
-			{ genericToken: false, value: ")" },
+			{ genericToken: false, value: "]" },
 			{ genericToken: false, value: "," },
 			{ genericToken: false, value: "I" }
 		],
@@ -2162,20 +2188,53 @@ const addressingRules: RuleInterface[] = [
 			{ genericToken: false, value: "I" }
 		],
 		handleRule: zeroPageIndexed
-	}
+	},
+	{
+		name: "absolute",
+		rule: [
+			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
+			{ genericToken: true, tokenTypes: ["identifier", "number"], isArgument: true }
+		],
+		handleRule: absolute
+	},
+	{
+		name: "absoluteIndexed",
+		rule: [
+			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
+			{ genericToken: true, tokenTypes: ["identifier", "number"], isArgument: true },
+			{ genericToken: false, value: "," },
+			{ genericToken: false, value: "I" },
+		],
+		handleRule: absoluteIndexed
+	},
+	{
+		name: "implied",
+		rule: [
+			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
+		],
+		handleRule: implied
+	},
 ];
+
+function toNumber(str: string): number {
+	let negative = str.startsWith("-");
+	if (negative) str = str.substring(1);
+	let value =
+		str.startsWith("0b") ?
+			Number.parseInt(str.substring(2), 2) :
+			str.startsWith("0o") ?
+				Number.parseInt(str.substring(2), 8) :
+				Number.parseInt(str);
+	if (negative) value = -value;
+	return value;
+}
 
 function handleByteWordCast(label: Label) {
 	for (let ln of label.code) {
 		for (let i = 0; i < ln.tokens.length; i++) {
 			if (ln.tokens[i].value === "word" || ln.tokens[i].value === "byte") {
 				if (ln.tokens[i + 1].type === "number") {
-					let value =
-						ln.tokens[i + 1].value.startsWith("0b") ?
-							Number.parseInt(ln.tokens[i + 1].value.substring(2), 2) :
-							ln.tokens[i + 1].value.startsWith("0o") ?
-								Number.parseInt(ln.tokens[i + 1].value.substring(2), 8) :
-								Number.parseInt(ln.tokens[i + 1].value);
+					let value = toNumber(ln.tokens[i + 1].value);
 					if (
 						(!fits16bit(value) && ln.tokens[i].value === "word") ||
 						(!fits8bit(value) && ln.tokens[i].value === "byte")

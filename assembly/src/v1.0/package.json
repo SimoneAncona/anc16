@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc --build",
-    "start": "tsc --build && cls && echo ------------------------ && node index.js ./test/hello_world.anc16 -h --h-symbol-ref --h-draw",
+    "start": "tsc --build && cls && echo ------------------------ && node index.js ..\\..\\firmware\\firmware.anc16 ..\\..\\firmware\\firmware.bin -h --h-symbol-ref --h-draw",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Simone Ancona",

@@ -115,7 +115,7 @@ Is used to call a system procedure referenced by a symbol or the absolute addres
 
 ```
 _code:
-	LDA my_message	; pointer to the message
+	LDI # my_message	; pointer to the message
 	LDB #5			; message length
 	SYSCALL print	; display the message
 
@@ -150,11 +150,11 @@ The relative addressing mode is specified putting a *J. Example: `JOC *J`
 
 ### Indirect
 the argument is 16-bit long and is and address of a cell that store another address used in this addressing mode.
-The indirect addressing mode is specified putting the address in two brackets. Example: `CMBH (0x40A4)`
+The indirect addressing mode is specified putting the address in two brackets. Example: `CMBH [0x40A4]`
 
 ### Indirect indexed
 as indirect, but is added the value stored in I (as a signed integer) to the final address.
-Like in the indirect you have to write (address), I. Example: `ANB (0o554), I`
+Like in the indirect you have to write [address], I. Example: `ANB [0o554], I`
 
 ### Implied 
 you just write the instruction.
