@@ -15,7 +15,7 @@ PSH
 JMP __ref__
 `;
 const SYSCALL_MACRO = `
-LDAL __ref__
+LDAL # BYTE __ref__
 SYS
 `;
 const STD_SYSCALLS = {
@@ -822,67 +822,74 @@ function handleGenericSyntaxError(line: Line) {
 
 // -------------------------------------- EXPRESSION EVAL --------------------------------------
 
-function evalExpressions(lines: Line[]) {
+function evalExpressions(lines: Line[], preProcess = true) {
+	const PRE_PROC_DIR = [
+		"use",
+		"import",
+		"if",
+	]
 	for (let line of lines) {
 		let i = 0;
-		for (let token of line.tokens) {
-			if (token.type === "number" || token.value === "(") {
-				let j = i;
-				let exp = "";
+		if (preProcess && line.tokens[0] !== undefined && PRE_PROC_DIR.includes(line.tokens[0].value)) {
+			for (let token of line.tokens) {
+				if (token.type === "number" || token.value === "(" || token.value === "$") {
+					let j = i;
+					let exp = "";
 
-				for (; j < line.tokens.length; j++) {
-					if (line.tokens[j].value === "$") {
+					for (; j < line.tokens.length; j++) {
+						if (line.tokens[j].value === "$" && preProcess) {
+							const err: Error = {
+								type: $_REFERENCE_TO_NULL,
+								message: "Cannot resolve $ address value",
+								otherInfo: true,
+								fromColumn: line.tokens[j].column,
+								toColumn: line.tokens[j].column,
+								fromLine: line.lineNumber,
+								toLine: line.lineNumber,
+								moduleName: line.fromModule,
+								sourceLines: [lineToString(line)]
+							};
+							printExit(err);
+						}
+						if (
+							!(
+								line.tokens[j].type == "number" ||
+								line.tokens[j].value == "(" ||
+								line.tokens[j].value == ")" ||
+								line.tokens[j].value == "+" ||
+								line.tokens[j].value == "-" ||
+								line.tokens[j].value == "*" ||
+								line.tokens[j].value == "/"
+							)
+						) break;
+						exp += line.tokens[j].value;
+					}
+					let value;
+					try {
+						value = String(Math.floor(Number(eval(exp))));
+					} catch {
 						const err: Error = {
-							type: $_REFERENCE_TO_NULL,
-							message: "Cannot resolve $ address value",
+							type: GENERIC_SYNTAX_ERROR,
+							message: "An error occurred while evaluating math expression",
 							otherInfo: true,
-							fromColumn: line.tokens[j].column,
+							fromColumn: line.tokens[i].column,
 							toColumn: line.tokens[j].column,
 							fromLine: line.lineNumber,
 							toLine: line.lineNumber,
-							moduleName: line.fromModule,
-							sourceLines: [lineToString(line)]
+							sourceLines: [lineToString(line)],
+							moduleName: line.fromModule
 						};
 						printExit(err);
 					}
-					if (
-						!(
-							line.tokens[j].type == "number" ||
-							line.tokens[j].value == "(" ||
-							line.tokens[j].value == ")" ||
-							line.tokens[j].value == "+" ||
-							line.tokens[j].value == "-" ||
-							line.tokens[j].value == "*" ||
-							line.tokens[j].value == "/"
-						)
-					) break;
-					exp += line.tokens[j].value;
-				}
-				let value;
-				try {
-					value = String(eval(exp));
-				} catch {
-					const err: Error = {
-						type: GENERIC_SYNTAX_ERROR,
-						message: "An error occurred while evaluating math expression",
-						otherInfo: true,
-						fromColumn: line.tokens[i].column,
-						toColumn: line.tokens[j].column,
-						fromLine: line.lineNumber,
-						toLine: line.lineNumber,
-						sourceLines: [lineToString(line)],
-						moduleName: line.fromModule
+					line.tokens[i] = {
+						column: line.tokens[i].column,
+						value: value,
+						type: "number"
 					};
-					printExit(err);
+					line.tokens.splice(i + 1, j - (i + 1));
 				}
-				line.tokens[i] = {
-					column: line.tokens[i].column,
-					value: value,
-					type: "number"
-				};
-				line.tokens.slice(i + 1, j);
+				i++;
 			}
-			i++;
 		}
 	}
 }
@@ -1328,6 +1335,12 @@ type Data = {
 	size: number,
 	position: number,
 	resolve: "currentAddress"
+} | {
+	token: Token,
+	size: number,
+	position: number,
+	resolve: "expression",
+	expression: string
 }
 
 type Label = {
@@ -1747,7 +1760,7 @@ function relative(tokens: Token[], scope: string[], source: Line[], line: Line):
 				resolve: "symbol",
 				symbol: tokens[1].value,
 				reference: "relative",
-				size: 1
+				size: 1,
 			}
 			:
 			{
@@ -1995,10 +2008,12 @@ function call(tokens: Token[], scope: string[], source: Line[], line: Line) {
 		if (source[i] === line) {
 			source.splice(i, 1);
 			let callMacro = parse(CALL_MACRO.replace("__ref__", tokens[0].value), line.fromModule);
+			let j = 0.1;
 			for (let ln of callMacro) {
-				ln.lineNumber = line.lineNumber;
+				ln.lineNumber = line.lineNumber + j;
 				ln.indentLevel = line.indentLevel;
 				source.splice(i, 0, ln);
+				j += 0.1;
 			}
 		}
 	}
@@ -2033,10 +2048,12 @@ function syscall(tokens: Token[], scope: string[], source: Line[], line: Line) {
 		if (source[i] === line) {
 			source.splice(i, 1);
 			let callMacro = parse(SYSCALL_MACRO.replace("__ref__", String(getSyscall(tokens[0].value))), line.fromModule);
+			let j = 0.1;
 			for (let ln of callMacro) {
-				ln.lineNumber = line.lineNumber;
+				ln.lineNumber = line.lineNumber + j;
 				ln.indentLevel = line.indentLevel;
 				source.splice(i, 0, ln);
+				j += 0.1
 			}
 		}
 	}
@@ -2430,7 +2447,7 @@ function handleLiteralNumbers(lb: Label) {
 function removeNull(label: Label) {
 	for (let i = 0; i < label.data.length; i++) {
 		// @ts-ignore
-		if (label.data[i].size === 0 || label.data[i].resolve === "symbol" && label.data[i].symbol === "") {
+		if ((label.data[i].size === 0 && label.data[i].resolve !== "expression") || label.data[i].resolve === "symbol" && label.data[i].symbol === "") {
 			label.data.splice(i, 1);
 			i--;
 		}
@@ -2548,8 +2565,11 @@ function resolveSizes(labels: Label[]) {
 			sub.size = tempInnerSize;
 			tempSize += tempInnerSize;
 		}
+		let i = 0;
 		for (let d of lb.data) {
+			if (i != 0 && lb.data[i - 1].resolve === "expression") continue
 			tempSize += d.size;
+			i++;
 		}
 		lb.size = tempSize;
 	}
@@ -2697,6 +2717,46 @@ function resolveAddresses(labels: Label[]) {
 
 }
 
+function resolveExpressions(labels: Label[]) {
+	for (let lb of labels) {
+		for (let i = 1; i < lb.data.length; i++) {
+			if (lb.data[i].resolve === "expression") {
+				let exp = "";
+				let isNum = false;
+				let j = i - 1;
+				for (; j < lb.data.length; j++) {
+					if (!isNum) {
+						//@ts-ignore
+						exp += lb.data[j].value;
+						isNum = true;
+					}
+					else if (isNum) {
+						if (lb.data[j].resolve !== "expression") break;
+						//@ts-ignore
+						exp += lb.data[j].expression;
+						isNum = false;
+					}
+				}
+				let value;
+				try {
+					value = Math.floor(Number(eval(exp)));
+				} catch {
+					const err: Error = {
+						type: GENERIC_SYNTAX_ERROR,
+						message: "An error occurred while evaluating math expression",
+						otherInfo: false,
+						moduleName: lb.scope[0]
+					};
+					printExit(err);
+				}
+				//@ts-ignore
+				lb.data[i - 1].value = value;
+				lb.data.splice(i, j - i);
+			}
+		}
+	}
+}
+
 function getUnifromData(label: Label): Data[] {
 	let uniformData: Data[] = [...label.data];
 	for (let sub of label.subLabels) {
@@ -2800,6 +2860,45 @@ function handleSymbols(lb: Label) {
 					symbol: tk.value,
 					reference: "absolute"
 				});
+			}
+		}
+	}
+}
+
+function handleExpressions(lb: Label) {
+	for (let line of lb.code) {
+		for (let i = 0; i < line.tokens.length; i++) {
+			if (
+				line.tokens[i].value === "("
+				|| line.tokens[i].value === ")"
+				|| line.tokens[i].value === "+"
+				|| line.tokens[i].value === "-"
+				|| line.tokens[i].value === "/"
+			) {
+				lb.data.push(
+					{
+						token: line.tokens[i],
+						resolve: "expression",
+						size: 0,
+						position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + line.tokens[i].column,
+						expression: line.tokens[i].value
+					}
+				);
+				line.tokens.splice(i, 1);
+			}
+			else if (line.tokens[i].value === "*" && i != 0) {
+				if (line.tokens[i - 1].type !== "instruction") {
+					lb.data.push(
+						{
+							token: line.tokens[i],
+							resolve: "expression",
+							size: 0,
+							position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + line.tokens[i].column,
+							expression: line.tokens[i].value
+						}
+					);
+					line.tokens.splice(i, 1);
+				}
 			}
 		}
 	}
@@ -2912,21 +3011,23 @@ function setData(labels: Label[]) {
 	checkLabels(labels);
 
 	for (let lb of labels) {
+		handleMacros(lb);
 		handleSubLabelAccess(lb);
 		handleByteWordCast(lb);
 		handleReserveBytes(lb);
 		handleSizeOf(lb);
 		handleCurrentAddress(lb);
 		handleLiteralStrings(lb);
-		handleMacros(lb);
+		handleExpressions(lb);
 		for (let sublb of lb.subLabels) {
+			handleMacros(sublb);
 			handleSubLabelAccess(sublb);
 			handleByteWordCast(sublb);
 			handleReserveBytes(sublb);
 			handleSizeOf(sublb);
 			handleCurrentAddress(sublb);
 			handleLiteralStrings(sublb);
-			handleMacros(sublb);
+			handleExpressions(sublb);
 		}
 	}
 	handleIdentifiers(labels);
@@ -2961,6 +3062,7 @@ function setData(labels: Label[]) {
 		}
 	}
 
+
 	for (let lb of labels) {
 		handleLiteralNumbers(lb);
 		handleSymbols(lb);
@@ -2972,7 +3074,6 @@ function setData(labels: Label[]) {
 		}
 	}
 
-
 	for (let lb of labels) {
 		resolveImmediates(lb);
 		for (let sublb of lb.subLabels) {
@@ -2982,6 +3083,7 @@ function setData(labels: Label[]) {
 
 	resolveSizes(labels);
 	resolveAddresses(labels);
+	resolveExpressions(labels);
 
 	for (let lb of labels) {
 		lb.data = getUnifromData(lb);
@@ -2991,20 +3093,6 @@ function setData(labels: Label[]) {
 
 // ------------------------------ BINARY ------------------------------
 function setBinary(labels: Label[]) {
-	// for (let lb of labels) {
-	// 	for (let d of lb.data) {
-	// 		if (d.resolve != "value") {
-	// 			const err: LocalError = {
-	// 				type: UNDEFINED_PTR_REFERENCE,
-	// 				message: "An error occurred while retriving the pointer reference in label '" + lb.name + "'",
-	// 				otherInfo: false
-	// 			};
-	// 			printExit(err);
-	// 		}
-	// 		if (d.resolve === "value")
-	// 			lb.binary.push(d.value);
-	// 	}
-	// }
 	for (let lb of labels) {
 		lb.binary = new Uint8Array(lb.size as number);
 		let i = 0;
@@ -3109,7 +3197,7 @@ function debugData(labels: Label[]) {
 
 function debugLabelDataHexDump(labels: Label[]) {
 	const hexDump = (label: Label, isSub = false) => {
-		console.log((isSub ? "\t" : "") + label.name.cyan);
+		console.log((isSub ? "\t" : "") + label.name.cyan + " @ " + String(label.address).cyan + " : " + String(label.size).cyan);
 		let i = 0;
 		process.stdout.write(isSub ? "\t" : "");
 		for (let data of label.data) {
@@ -3136,8 +3224,10 @@ function debugLabelDataHexDump(labels: Label[]) {
 				process.stdout.write(data.instruction.toUpperCase().red + " ");
 			} else if (data.resolve === "size") {
 				process.stdout.write(data.symbol.magenta + " ");
-			} else {
+			} else if (data.resolve === "currentAddress") {
 				process.stdout.write("$ ");
+			} else {
+				process.stdout.write(data.expression.yellow + " ")
 			}
 		}
 		console.log();

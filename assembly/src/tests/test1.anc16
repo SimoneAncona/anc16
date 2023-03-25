@@ -1,4 +1,0 @@
-USE STDCALL
-
-_code:	; program entry point
-	

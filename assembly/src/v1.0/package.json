@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc --build",
-    "start": "tsc --build && cls && echo ------------------------ && node index.js ..\\..\\firmware\\firmware.anc16 ..\\..\\firmware\\firmware.bin -h --h-symbol-ref --h-draw",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "tsc --build && cls && echo ------------------------ && node index.js ./test/test.anc16 ./test/test.bin -h --h-symbol-ref --h-draw",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "distribute": "npx pkg -t node18-linux-x64, node18-macos-x64, node18-win-x64, node18-linux-arm64, node18-macos-arm64, node18-win-arm64 index.js"
   },
   "author": "Simone Ancona",
   "license": "ISC",
@@ -14,6 +15,7 @@
     "@types/node": "^18.13.0",
     "colors": "^1.4.0",
     "fs": "^0.0.1-security",
+    "nexe": "^4.0.0-rc.2",
     "typescript": "^4.9.5"
   }
 }

@@ -19,6 +19,8 @@ elif used sus
 _code:
 	"ciao"
 endif
+msg: "ABCDE"
+len: $ - msg
 
 org 0x3200
 func:

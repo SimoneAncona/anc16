@@ -1,0 +1,10 @@
+message: "Hello, World!"	; the message
+len: $ - message			; the length of the message ($ = current address, message = address of message)
+
+org 0x4000	; the address in memory where my program will be loaded (for ANC OS is 0x4000, it may vary from system to system)
+_code:
+	ldi # message	; loading the pointer to the string in index register
+	ldb len			; loading the length of the message to print
+	syscall print	; calling the system call that allows you to print characters on the screen
+	ldb # 0			; loading the exit status code (0 = no errors) into base register
+	syscall exit	; calling the system call
