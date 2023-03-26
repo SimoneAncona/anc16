@@ -1,0 +1,25 @@
+{
+    "name": "anc16-assembly",
+    "displayName": "ANC16 assembly",
+    "description": "ANC16 assembly language support",
+    "version": "1.2.0",
+    "engines": {
+        "vscode": "^1.68.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "anc16",
+            "aliases": ["ANC16", "anc16"],
+            "extensions": [".anc16", ".REF"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "anc16",
+            "scopeName": "source.anc16",
+            "path": "./syntaxes/anc16.tmLanguage.json"
+        }]
+    }
+}
