@@ -1,4 +1,4 @@
-import isa from "../../../../data/anc16_isa.json"
+import isa from "../../../data/anc16_isa.json"
 import { printExit, Error } from "./localError";
 
 // addressing rules
