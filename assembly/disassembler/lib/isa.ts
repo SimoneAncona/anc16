@@ -1,4 +1,4 @@
-import isa from "../../../data/anc16_isa.json"
+import * as isa from "../../data/anc16_isa.json"
 
 // addressing rules
 export type Addressing =
