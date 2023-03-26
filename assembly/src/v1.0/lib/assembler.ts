@@ -20,11 +20,17 @@ SYS
 `;
 const STD_SYSCALLS = {
 	exit: 0,
-	fread: 1,
-	fwrite: 2,
-	print: 3,
-	wait: 4,
-	listenKey: 5
+	fopen: 1,
+	fclose: 2,
+	fread: 3,
+	fwrite: 4,
+	print: 5,
+	wait: 6,
+	listenKey: 7,
+	requestPrivileges: 8,
+	malloc: 9,
+	dealloc: 10,
+	mkdir: 11
 }
 
 type TokenType = "reserved" | "identifier" | "number" | "instruction" | "special" | "other" | "string" | "any";
@@ -2567,7 +2573,10 @@ function resolveSizes(labels: Label[]) {
 		}
 		let i = 0;
 		for (let d of lb.data) {
-			if (i != 0 && lb.data[i - 1].resolve === "expression") continue
+			if (i != 0 && lb.data[i - 1].resolve === "expression") {
+				i++;
+				continue
+			}
 			tempSize += d.size;
 			i++;
 		}
@@ -3007,6 +3016,33 @@ function setAddressFromSymbol(accessFrom: string[], symbol: string, labels: Labe
 	}
 }
 
+function handleInlineExpressions(lables: Label[]) {
+	for (let lb of lables) {
+		for (let ln of lb.code) {
+			for (let i = 1; i < ln.tokens.length; i++) {
+				if (ln.tokens[i].type === "identifier" && ln.tokens[i].value === "") {
+					let j = i + 1;
+					for (; j < ln.tokens.length; j++) {
+						if (ln.tokens[j].type === "number") {
+							lb.data.push(
+								{
+									token: ln.tokens[j],
+									resolve: "value",
+									size: 2,
+									value: Number(ln.tokens[j].value),
+									position: ln.lineNumber * LINE_PADDING_BYTE_OFFSET + ln.tokens[j].column,
+									forced: false
+								}
+							);
+							ln.tokens.splice(j, 1);
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
 function setData(labels: Label[]) {
 	checkLabels(labels);
 
@@ -3031,6 +3067,7 @@ function setData(labels: Label[]) {
 		}
 	}
 	handleIdentifiers(labels);
+	handleInlineExpressions(labels);
 
 	const setRules = (lb: Label) => {
 		let rules: Rule[] = [];

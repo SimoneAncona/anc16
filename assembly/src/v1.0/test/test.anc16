@@ -25,7 +25,7 @@ len: $ - msg
 org 0x3200
 func:
 	ada struct.nome
-	ada # sizeof _code
+	ada # sizeof _code - 5
 	adb # word 10
 	reserve 20
 altra_func:
