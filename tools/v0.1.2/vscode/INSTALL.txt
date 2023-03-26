@@ -1,4 +1,0 @@
-Copy anc16-assembly folder into:
-Windows: %USERPROFILE%\.vscode\extensions
-Linux: ~/.vscode/extensions
-MacOS: ~/.vscode/extensions
