@@ -2691,10 +2691,12 @@ function resolveAddresses(labels: Label[]) {
 				printExit(err);
 			}
 		}
-		labelBefore = labels[i];
 		if (labelBefore.subLabels.length > 0)
 			resolveSubLabelAddresses(labelBefore);
+		labelBefore = labels[i];
 	}
+	if (labelBefore.subLabels.length > 0)
+		resolveSubLabelAddresses(labelBefore);
 
 	for (let lb of labels) {
 		for (let d of lb.data) {
