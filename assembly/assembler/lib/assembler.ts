@@ -2692,7 +2692,8 @@ function resolveAddresses(labels: Label[]) {
 			}
 		}
 		labelBefore = labels[i];
-		resolveSubLabelAddresses(labelBefore);
+		if (labelBefore.subLabels.length > 0)
+			resolveSubLabelAddresses(labelBefore);
 	}
 
 	for (let lb of labels) {
@@ -2711,7 +2712,9 @@ function resolveAddresses(labels: Label[]) {
 		for (let sublb of lb.subLabels) {
 			for (let d of sublb.data) {
 				if (d.resolve === "symbol") {
-					setAddressFromSymbol(sublb.scope, d.symbol, labels, d, d.reference, getOffset(sublb, d));
+					let symbol = d.symbol;
+					if (symbol === sublb.name) symbol = lb.name + "." + sublb.name;
+					setAddressFromSymbol(sublb.scope, symbol, labels, d, d.reference, getOffset(sublb, d));
 				} else if (d.resolve === "currentAddress") {
 					//@ts-ignore
 					d.resolve = "value";
@@ -2800,9 +2803,16 @@ function resolveSubLabelAddresses(label: Label) {
 
 function getOffset(label: Label, data: Data): number {
 	let addr = label.address as number;
+	let expressionBefore = false;
 	for (let d of label.data) {
 		if (d === data) return addr;
-		addr += (d.size as number);
+		if (d.resolve === "expression") {
+			expressionBefore = true;
+			continue;
+		}
+		if (!expressionBefore)
+			addr += (d.size as number);
+		expressionBefore = false;
 	}
 	return addr;
 }
@@ -2947,10 +2957,10 @@ function setAddressFromSymbol(accessFrom: string[], symbol: string, labels: Labe
 					}
 				} else {
 					// @ts-ignore
-					data.value = (label.address as number - fromAddress);
+					data.value = (label.address as number - (fromAddress - 2));
 					data.size = 1;
 					// @ts-ignore
-					if (!fits8bit(label.value as number * 2)) {
+					if (!fits8bit(data.value as number * 2)) {
 						const err: Error = {
 							type: VALUE_SIZE_OVERFLOW,
 							message: "The relative addressing must be an 8 bit signed value",
@@ -2960,8 +2970,18 @@ function setAddressFromSymbol(accessFrom: string[], symbol: string, labels: Labe
 						printExit(err);
 					}
 				}
+				return;
 			}
 		}
+		let parent = getParent(symbol, labels);
+		let msg = parent === null ? "" : ". Did you mean '" + parent + "." + symbol + "'?"
+		const err: Error = {
+			type: SYMBOL_NOT_DEFINED,
+			message: "Symbol '" + symbol + "' is not defined" + msg,
+			otherInfo: false,
+			moduleName: accessFrom[0]
+		};
+		printExit(err);
 	}
 	else {
 		for (let label of labels) {
@@ -2996,7 +3016,7 @@ function setAddressFromSymbol(accessFrom: string[], symbol: string, labels: Labe
 							}
 						} else {
 							// @ts-ignore
-							data.value = (sublb.address as number - fromAddress);
+							data.value = (sublb.address as number - (fromAddress - 2));
 							data.size = 1;
 							// @ts-ignore
 							if (!fits8bit(data.value as number * 2)) {
@@ -3014,6 +3034,15 @@ function setAddressFromSymbol(accessFrom: string[], symbol: string, labels: Labe
 			}
 		}
 	}
+}
+
+function getParent(symbol: string, labels: Label[]): string {
+	for (let lb of labels) {
+		for (let s of lb.subLabels) {
+			if (s.name === symbol) return lb.name;
+		}
+	}
+	return null;
 }
 
 function handleInlineExpressions(lables: Label[]) {
