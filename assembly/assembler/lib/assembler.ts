@@ -40,7 +40,7 @@ type TokenRegex = {
 	regularExpression: RegExp
 }
 
-const SPECIAL_REGEXP = "\\+|-|\\*|\\/|\\$|,|:|#|\\(|\\)|\\.|\\[|\\]";
+const SPECIAL_REGEXP = "\\+|-|\\*|\\/|\\$|,|:|#|\\(|\\)|\\.|\\[|\\]|%";
 const SPACES = " |$|\\t"
 
 function concatRegexp(reg: RegExp, exp: RegExp) {
@@ -51,7 +51,7 @@ function concatRegexp(reg: RegExp, exp: RegExp) {
 
 const tokenTypes: TokenRegex[] = [
 	{ name: "string", regularExpression: /".*"/gmi },
-	{ name: "reserved", regularExpression: /\b(use|used|as|stdcall|import|org|word|byte|if|else|elif|endif|sizeof|reserve|call|syscall|local|global|not|syslib)\b/gmi },
+	{ name: "reserved", regularExpression: /\b(use|used|as|stdcall|import|org|word|byte|if|else|elif|endif|sizeof|reserve|call|syscall|local|global|not|syslib|a|b|ah|al|bh|bl|i|j)\b/gmi },
 	{ name: "instruction", regularExpression: new RegExp(`\\b(ada|adb|ana|anb|aret|clc|cld|cli|clo|cls|cmah|cmbh|cmpa|cmpb|cmpi|cpuid|dea|deb|dei|dej|ina|inb|ini|inj|jcc|jcs|jeq|jmp|jnc|jne|jns|joc|jos|kill|lda|ldah|ldal|ldb|ldbh|ldbl|lddr|ldi|ldj|ldsp|limh|liml|lemh|leml|ldsr|msb|nop|ora|orb|pop|psh|read|rest|ret|sed|sei|semh|seml|ses|shl|shr|simh|siml|stah|stb|stbh|sti|stj|stpc|stsr|sua|sub|sys|tab|tabh|tabl|tadr|taemh|taeml|tahj|tai|taimh|taiml|tba|tbah|tbal|tbhj|tbi|tisp|tspb|wrte|wrti|xora|xorb)(?=${SPECIAL_REGEXP + "|" + SPACES})`, "gmi") },
 	{ name: "number", regularExpression: new RegExp(`\\b(\\-?(0x[0-9a-fA-F]+|\\d+|0o[0-7]+|0b[0-1]+))(?=${SPECIAL_REGEXP + "|" + SPACES})`, "gmi") },
 	{ name: "identifier", regularExpression: new RegExp(`\\b[a-zA-Z_][a-zA-Z0-9_]*(?=${SPECIAL_REGEXP + "|" + SPACES})`, "gmi") },
@@ -91,9 +91,29 @@ function parse(sourceString: string, moduleName: string): Line[] {
 
 	lines = tokenMap(sourceString, moduleName);
 	parseNumbers(lines);
+	switchToken(lines);
 	checkSyntaxRule(lines);
 	preProcess(lines, moduleName);
 	return lines;
+}
+
+function switchToken(lines: Line[]) {
+	for (let l of lines) {
+		for (let i = 0; i < l.tokens.length - 1; i++) {
+			if (
+				l.tokens[i].value == "a" ||
+				l.tokens[i].value == "ah" ||
+				l.tokens[i].value == "al" ||
+				l.tokens[i].value == "b" ||
+				l.tokens[i].value == "bh" ||
+				l.tokens[i].value == "bl" ||
+				l.tokens[i].value == "i" ||
+				l.tokens[i].value == "j"
+			) {
+				if (l.tokens[i + 1].value === ":") l.tokens[i].type = "identifier";
+			}
+		}
+	}
 }
 
 function parseNumbers(lines: Line[]) {
@@ -444,7 +464,7 @@ const syntaxRules: SyntaxRule[] = [
 		specific: true,
 		after: "*",
 		canFindOnly: ["number", "identifier"],
-		canFindSpecific: ["(", "$", "-", "+"],
+		canFindSpecific: ["(", "$", "-", "+", "j"],
 		pair: false
 	},
 	{
@@ -501,7 +521,7 @@ const syntaxRules: SyntaxRule[] = [
 		specific: false,
 		after: "instruction",
 		canFindOnly: ["number", "identifier"],
-		canFindSpecific: ["#", "word", "byte", "\n", "(", "*", "["],
+		canFindSpecific: ["#", "word", "byte", "\n", "(", "*", "[", "%", "a", "b", "ah", "al", "bh", "bl", "i", "j"],
 		pair: false
 	}
 ];
@@ -1781,7 +1801,7 @@ function relative(tokens: Token[], scope: string[], source: Line[], line: Line):
 }
 
 function relativeUsingJ(tokens: Token[], scope: string[], source: Line[], line: Line): Data[] {
-	let opc = opcode(tokens[0].value, "implied", line);
+	let opc = opcode(tokens[0].value, "relativeUsingJ", line);
 	return [{
 		token: tokens[0],
 		position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[0].column,
@@ -1940,7 +1960,7 @@ function zeroPage(tokens: Token[], scope: string[], source: Line[], line: Line):
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "value",
 				value: toNumber(tokens[1].value),
-				size: 2,
+				size: 1,
 				forced: true
 			}
 	];
@@ -1988,7 +2008,7 @@ function zeroPageIndexed(tokens: Token[], scope: string[], source: Line[], line:
 				position: line.lineNumber * LINE_PADDING_BYTE_OFFSET + tokens[1].column,
 				resolve: "value",
 				value: toNumber(tokens[1].value),
-				size: 2,
+				size: 1,
 				forced: true
 			}
 	];
@@ -2091,7 +2111,7 @@ const addressingRules: RuleInterface[] = [
 		name: "accumulatorHighRegister",
 		rule: [
 			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
-			{ genericToken: false, value: "AH" }
+			{ genericToken: false, value: "ah" }
 		],
 		handleRule: accumulatorHighRegister
 	},
@@ -2099,7 +2119,7 @@ const addressingRules: RuleInterface[] = [
 		name: "accumulatorLowRegister",
 		rule: [
 			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
-			{ genericToken: false, value: "AL" }
+			{ genericToken: false, value: "al" }
 		],
 		handleRule: accumulatorLowRegister
 	},
@@ -2107,7 +2127,7 @@ const addressingRules: RuleInterface[] = [
 		name: "accumulatorRegister",
 		rule: [
 			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
-			{ genericToken: false, value: "A" }
+			{ genericToken: false, value: "a" }
 		],
 		handleRule: accumulatorRegister
 	},
@@ -2115,7 +2135,7 @@ const addressingRules: RuleInterface[] = [
 		name: "baseHighRegister",
 		rule: [
 			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
-			{ genericToken: false, value: "BH" }
+			{ genericToken: false, value: "bh" }
 		],
 		handleRule: baseHighRegister
 	},
@@ -2123,7 +2143,7 @@ const addressingRules: RuleInterface[] = [
 		name: "baseLowRegister",
 		rule: [
 			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
-			{ genericToken: false, value: "BL" }
+			{ genericToken: false, value: "bl" }
 		],
 		handleRule: baseLowRegister
 	},
@@ -2131,7 +2151,7 @@ const addressingRules: RuleInterface[] = [
 		name: "baseRegister",
 		rule: [
 			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
-			{ genericToken: false, value: "B" }
+			{ genericToken: false, value: "b" }
 		],
 		handleRule: baseRegister
 	},
@@ -2139,7 +2159,7 @@ const addressingRules: RuleInterface[] = [
 		name: "indexRegister",
 		rule: [
 			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
-			{ genericToken: false, value: "I" }
+			{ genericToken: false, value: "i" }
 		],
 		handleRule: indexRegister
 	},
@@ -2157,7 +2177,7 @@ const addressingRules: RuleInterface[] = [
 		rule: [
 			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
 			{ genericToken: false, value: "*" },
-			{ genericToken: false, value: "J" },
+			{ genericToken: false, value: "j" },
 		],
 		handleRule: relativeUsingJ
 	},
@@ -2188,7 +2208,7 @@ const addressingRules: RuleInterface[] = [
 			{ genericToken: true, tokenTypes: ["identifier", "number"], isArgument: true },
 			{ genericToken: false, value: "]" },
 			{ genericToken: false, value: "," },
-			{ genericToken: false, value: "I" }
+			{ genericToken: false, value: "i" }
 		],
 		handleRule: indirectIndexed
 	},
@@ -2208,7 +2228,7 @@ const addressingRules: RuleInterface[] = [
 			{ genericToken: false, value: "%" },
 			{ genericToken: true, tokenTypes: ["identifier", "number"], isArgument: true },
 			{ genericToken: false, value: "," },
-			{ genericToken: false, value: "I" }
+			{ genericToken: false, value: "i" }
 		],
 		handleRule: zeroPageIndexed
 	},
@@ -2226,7 +2246,7 @@ const addressingRules: RuleInterface[] = [
 			{ genericToken: true, tokenTypes: ["instruction"], isArgument: true },
 			{ genericToken: true, tokenTypes: ["identifier", "number"], isArgument: true },
 			{ genericToken: false, value: "," },
-			{ genericToken: false, value: "I" },
+			{ genericToken: false, value: "i" },
 		],
 		handleRule: absoluteIndexed
 	},

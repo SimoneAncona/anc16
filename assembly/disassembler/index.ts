@@ -15,13 +15,14 @@ Flags:
 	${"--help".cyan}	\tShow this list
 	${"-v".cyan}		Show the version
 	${"--version".cyan}	Show the version
+	${"-z".cyan}		Set if the input file contains zeros from 0x0000 to _code
 `;
 
 const version =
 	`
 Assembly standard version: ${"2.0".green}
 ANC16 ISA version: ${"1.0".green}
-Disassembler version: ${"1.0.0".green}
+Disassembler version: ${"1.0.0-pr".green}
 `;
 
 if (process.argv.length < 3) {
@@ -63,14 +64,14 @@ try {
 	const err: Error = {
 		type: FILE_NOT_FOUND,
 		message: "Source file not found",
-		otherInfo: false
 	};
 	printExit(err);
 }
 
 let out = disassembler.disassemble(buffer, {
 	useHeader: isSet("-h"),
-	comments: isSet("-c")
+	comments: isSet("-c"),
+	zeros: isSet("-z")
 })
 
 if (fs.existsSync(outFileName))

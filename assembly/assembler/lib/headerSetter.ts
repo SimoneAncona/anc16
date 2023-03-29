@@ -117,8 +117,13 @@ export class HeaderSetter {
 
 	generateHeader(): Uint8Array {
 		let size = 11;
+		let overflow = false;
 		for (let s of this.headerOptions.symbolTable) {
 			size += s.symbol.length + 1 + 2;
+		}
+		if (size > 255) {
+			size = 11;
+			overflow = true;
 		}
 		let buffer = new Uint8Array(size);
 		buffer[0] = "A".charCodeAt(0);
@@ -136,15 +141,17 @@ export class HeaderSetter {
 		buffer[8] = this.getOS(this.headerOptions.osId);
 
 		let j = 9;
-		for (let i = 0; i < this.headerOptions.symbolTable.length; i++) {
-			let tempA: Array<number> = [];
-			for (let k = 0; k < this.headerOptions.symbolTable[i].symbol.length; k++)
-				tempA.push(this.headerOptions.symbolTable[i].symbol.charCodeAt(k));
-			tempA.push(0);
-			buffer.set(tempA, j);
-			j += tempA.length;
-			buffer.set(this.headerOptions.symbolTable[i].address, j);
-			j += 2;
+		if (!overflow) {
+			for (let i = 0; i < this.headerOptions.symbolTable.length; i++) {
+				let tempA: Array<number> = [];
+				for (let k = 0; k < this.headerOptions.symbolTable[i].symbol.length; k++)
+					tempA.push(this.headerOptions.symbolTable[i].symbol.charCodeAt(k));
+				tempA.push(0);
+				buffer.set(tempA, j);
+				j += tempA.length;
+				buffer.set(this.headerOptions.symbolTable[i].address, j);
+				j += 2;
+			}
 		}
 
 		buffer[j] = 0;
