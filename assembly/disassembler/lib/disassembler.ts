@@ -5,6 +5,7 @@ type Labels = Array<{ name: string, address: number }>;
 let codeA = -1;
 
 export function disassemble(buffer: Uint8Array, options: { useHeader: boolean, comments: boolean, zeros: boolean }): string {
+	console.time("Disassembly finished in");
 	let out: string = "";
 	let labels: Labels = [];
 	let index = 0;
@@ -62,6 +63,8 @@ export function disassemble(buffer: Uint8Array, options: { useHeader: boolean, c
 		out += "\tBYTE 0x" + (buffer[index]).toString(16).toUpperCase() + "\n";
 		index++;
 	}
+	process.stdout.write("✓ ".green);
+	console.timeEnd("Disassembly finished in");
 	return out;
 }
 

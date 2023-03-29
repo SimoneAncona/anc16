@@ -3,6 +3,9 @@
 	"name": "ANC16",
 	"patterns": [
 		{
+			"include": "#labels"
+		},
+		{
 			"include": "#instructions"
 		},
 		{
@@ -18,13 +21,13 @@
 			"include": "#numbers"
 		},
 		{
-			"include": "#labels"
-		},
-		{
 			"include": "#symbols"
 		},
 		{
 			"include": "#scopes"
+		},
+		{
+			"include": "#ref"
 		}
 	],
 	"repository": {
@@ -36,7 +39,7 @@
 				},
 				{
 					"name": "keyword.other",
-					"match": "\\b(?i)(CALL|SYSCALL|BYTE|WORD|SIZEOF|RESERVE)\\b"
+					"match": "\\b(?i)(CALL|SYSCALL|BYTE|WORD|SIZEOF|RESERVE|A|B|AH|AL|BH|I|J)\\b"
 				}
 			]
 		},
@@ -86,6 +89,14 @@
 				{
 					"name": "keyword.other",
 					"match": "\\b(?i)(LOCAL|GLOBAL)\\b"
+				}
+			]
+		},
+		"ref": {
+			"patterns": [
+				{
+					"name": "variable.name",
+					"match": "\\w"
 				}
 			]
 		}

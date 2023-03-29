@@ -208,8 +208,7 @@ export function assemble
 		tempBin.set(bin, zeros.length);
 		bin = tempBin
 	}
-	process.stdout.write("✓ ".green);
-	console.timeEnd("Assembly finished in");
+	
 	return { bin: bin, ref: ref };
 }
 // --- ---
