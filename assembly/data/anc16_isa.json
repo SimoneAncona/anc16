@@ -1324,7 +1324,7 @@
 				"argNBytes": 0
 			},
 			{
-				"opcode": "0x0065",
+				"opcode": "0x0069",
 				"addressingMode": "implied",
 				"argNBytes": 0
 			},
@@ -1494,6 +1494,32 @@
 				"opcode": "0x8062",
 				"addressingMode": "immediate",
 				"argNBytes": 2
+			}
+		]
+	},
+	{
+		"mnemonic": "POP",
+		"needPrevileges": false,
+		"opcodes": [
+			{
+				"opcode": "0x0065",
+				"addressingMode": "accumulatorRegister",
+				"argNBytes": 0
+			},
+			{
+				"opcode": "0x0066",
+				"addressingMode": "baseRegister",
+				"argNBytes": 0
+			},
+			{
+				"opcode": "0x0067",
+				"addressingMode": "accumulatorHighRegister",
+				"argNBytes": 0
+			},
+			{
+				"opcode": "0x0068",
+				"addressingMode": "accumulatorLowRegister",
+				"argNBytes": 0
 			}
 		]
 	},
