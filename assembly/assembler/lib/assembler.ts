@@ -25,12 +25,14 @@ const STD_SYSCALLS = {
 	fread: 3,
 	fwrite: 4,
 	print: 5,
-	wait: 6,
-	listenKey: 7,
-	requestPrivileges: 8,
-	malloc: 9,
-	dealloc: 10,
-	mkdir: 11
+	getl: 6, 
+	wait: 7,
+	listenKey: 8,
+	requestPrivileges: 9,
+	malloc: 10,
+	dealloc: 11,
+	mkdir: 12,
+	rm: 13
 }
 
 type TokenType = "reserved" | "identifier" | "number" | "instruction" | "special" | "other" | "string" | "any";
@@ -41,14 +43,7 @@ type TokenRegex = {
 }
 
 const SPECIAL_REGEXP = "\\+|-|\\*|\\/|\\$|,|:|#|\\(|\\)|\\.|\\[|\\]|%";
-const SPACES = " |$|\\t"
-
-function concatRegexp(reg: RegExp, exp: RegExp) {
-	let flags = reg.flags + exp.flags;
-	flags = Array.from(new Set(flags.split(''))).join();
-	return new RegExp(reg.source + exp.source, flags);
-}
-
+const SPACES = " |$|\\t";
 const tokenTypes: TokenRegex[] = [
 	{ name: "string", regularExpression: /".*"/gmi },
 	{ name: "reserved", regularExpression: /\b(use|used|as|stdcall|import|org|word|byte|if|else|elif|endif|sizeof|reserve|call|syscall|local|global|not|syslib|a|b|ah|al|bh|bl|i|j)\b/gmi },
@@ -92,9 +87,27 @@ function parse(sourceString: string, moduleName: string): Line[] {
 	lines = tokenMap(sourceString, moduleName);
 	parseNumbers(lines);
 	switchToken(lines);
+	mName(lines);
 	checkSyntaxRule(lines);
 	preProcess(lines, moduleName);
 	return lines;
+}
+
+function mName(lines: Line[]) {
+	for (let l of lines) {
+		if (l.tokens.length > 0 && l.tokens[0].value === "import") {
+			for (let i = 2; i < l.tokens.length - 1; i++) {
+				if (l.tokens[i].value === ".") {
+					l.tokens[i - 1].value = l.tokens[i - 1].value + ".";
+					l.tokens.splice(i, 1);
+					if (i < l.tokens.length) {
+						l.tokens[i - 1].value = l.tokens[i - 1].value + l.tokens[i].value;
+						l.tokens.splice(i, 1);
+					}
+				}
+			}
+		}
+	}
 }
 
 function switchToken(lines: Line[]) {
@@ -2890,16 +2903,28 @@ function handleIdentifiers(labels: Label[]) {
 
 function handleSymbols(lb: Label) {
 	for (let ln of lb.code) {
-		for (let tk of ln.tokens) {
-			if (tk.type === "identifier" && tk.value != "") {
-				lb.data.push({
-					token: tk,
-					resolve: "symbol",
-					position: ln.lineNumber * LINE_PADDING_BYTE_OFFSET + tk.column,
-					size: 2,
-					symbol: tk.value,
-					reference: "absolute"
-				});
+		for (let i = 0; i < ln.tokens.length; i++) {
+			if (ln.tokens[i].type === "identifier" && ln.tokens[i].value != "") {
+				if (!(
+					i != 0 && ln.tokens[i - 1].type === "instruction" ||
+					(i > 1 && (
+						ln.tokens[i - 1].value === "#" ||
+						ln.tokens[i - 1].value === "*" ||
+						ln.tokens[i - 1].value === "%" ||
+						ln.tokens[i - 1].value === "["
+					) && ln.tokens[i - 2].type === "instruction")
+					)
+				) {
+					lb.data.push({
+						token: ln.tokens[i],
+						resolve: "symbol",
+						position: ln.lineNumber * LINE_PADDING_BYTE_OFFSET + ln.tokens[i].column,
+						size: 2,
+						symbol: ln.tokens[i].value,
+						reference: "absolute"
+					});
+					ln.tokens.splice(i, 1);
+				}
 			}
 		}
 	}
@@ -3119,6 +3144,13 @@ function setData(labels: Label[]) {
 	handleIdentifiers(labels);
 	handleInlineExpressions(labels);
 
+	for (let lb of labels) {
+		handleSymbols(lb);
+		for (let sublb of lb.subLabels) {
+			handleSymbols(sublb);
+		}
+	}
+
 	const setRules = (lb: Label) => {
 		let rules: Rule[] = [];
 		lb.code.forEach(line => {
@@ -3152,11 +3184,9 @@ function setData(labels: Label[]) {
 
 	for (let lb of labels) {
 		handleLiteralNumbers(lb);
-		handleSymbols(lb);
 		removeNull(lb);
 		for (let sublb of lb.subLabels) {
 			handleLiteralNumbers(sublb);
-			handleSymbols(sublb);
 			removeNull(sublb);
 		}
 	}
