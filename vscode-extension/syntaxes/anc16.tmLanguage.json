@@ -24,6 +24,9 @@
 			"include": "#symbols"
 		},
 		{
+			"include": "#modules"
+		},
+		{
 			"include": "#scopes"
 		},
 		{
@@ -81,7 +84,7 @@
 		"symbols": {
 			"patterns": [{
 				"name":"keyword.operator",
-				"match": "([$]|[+]|[-]|[/])"
+				"match": "([$]|[+]|[-]|[/]|[*])"
 			}]
 		},
 		"scopes": {
@@ -89,6 +92,14 @@
 				{
 					"name": "keyword.other",
 					"match": "\\b(?i)(LOCAL|GLOBAL)\\b"
+				}
+			]
+		},
+		"modules": {
+			"patterns": [
+				{
+					"name": "entity.name.class",
+					"match": "\\b(?i)(?<=import) *[\\w|\\.]*"
 				}
 			]
 		},
