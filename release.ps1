@@ -45,3 +45,11 @@ Copy-Item * ..\v0.1\vscode\anc16-assembly
 Copy-Item syntaxes\* ..\v0.1\vscode\anc16-assembly\syntaxes
 
 Set-Location ..\
+
+# create ZIP 
+Compress-Archive -Path v0.1\* -DestinationPath v0.1.zip
+
+# Create tar.gz
+Set-Location v0.1\
+tar -cvzf ..\v0.1.tar.gz *
+cd..
