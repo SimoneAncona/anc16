@@ -68,7 +68,46 @@ export type Note = {
 }
 
 export function note(note: Note) {
+	let module = "_main";
+	if (note.moduleName !== undefined) module = note.moduleName;
+	let noteString =
+		`
+> ${"Note".cyan}${note.otherInfo ? " @ line: " + note.fromLine.toString().cyan + ", column: " + note.fromColumn.toString().cyan : ""}, module: ${module.green}:
+	${note.message}
 
+`;
+	if (note.otherInfo) {
+		if (note.sourceLines.length == 1) {
+
+			noteString += `\t${(note.fromLine).toString().cyan} | `;
+			for (let i = 0; i < note.sourceLines[0].length; i++) {
+				if (i < note.fromColumn - 1 || i > note.toColumn) noteString += note.sourceLines[0][i];
+				else noteString += note.sourceLines[0][i].cyan;
+			}
+
+		} else {
+
+			for (let i = 0; i < note.sourceLines.length; i++) {
+				noteString += `\t${(i + note.fromLine).toString().cyan} | `;
+				if (i == 0) {
+					for (let j = 0; j < note.sourceLines[i].length; j++) {
+						if (j < note.fromColumn) noteString += note.sourceLines[i][j];
+						else noteString += note.sourceLines[i][j].cyan;
+					}
+				} else if (i == note.sourceLines.length - 1) {
+					for (let j = 0; j < note.sourceLines[i].length; j++) {
+						if (j > note.toColumn) noteString += note.sourceLines[i][j];
+						else noteString += note.sourceLines[i][j].cyan;
+					}
+				} else {
+					noteString += note.sourceLines[i].cyan
+				}
+			}
+
+		}
+	}
+
+	console.log(noteString);
 }
 
 export function print(err: Error) {

@@ -198,7 +198,8 @@ export function assemble
 		tempBin.set(bin, zeros.length);
 		bin = tempBin
 	}
-	
+	process.stdout.write("✓ ".green);
+	console.timeEnd("Assembly finished in");
 	return { bin: bin, ref: ref };
 }
 // --- ---
@@ -2245,6 +2246,8 @@ function existSymbol(symbol: string, labels: Label[]): boolean {
 }
 
 function handleIdentifiers(labels: Label[]) {
+	let refs: string[] = [];
+
 	for (let lb of labels) {
 		for (let ln of lb.code) {
 			for (let tk of ln.tokens) {
@@ -2263,7 +2266,20 @@ function handleIdentifiers(labels: Label[]) {
 						};
 						printExit(err);
 					}
+					refs.push(tk.value);
+					if (tk.value.includes(".")) {
+						refs.push(tk.value.split(".")[0]);
+					}
 				}
+			}
+		}
+	}
+
+	// removing unused labels
+	for (let i = 0; i < labels.length; i++) {
+		if (labels[i].scope[0] != "_main") {
+			if (!refs.includes(labels[i].name)) {
+				labels.splice(i, 1);
 			}
 		}
 	}
