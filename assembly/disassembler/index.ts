@@ -22,7 +22,7 @@ const version =
 	`
 Assembly standard version: ${"2.0".green}
 ANC16 ISA version: ${"1.0".green}
-Disassembler version: ${"1.0.0-pr".green}
+Disassembler version: ${"1.0.1-pr".green}
 `;
 
 if (process.argv.length < 3) {
@@ -49,9 +49,15 @@ for (let i = 0; i < process.argv.length;) {
 }
 
 const isSet = (flag: string) => flags.includes(flag);
-
 let sourceFileName = process.argv[2];
+if (sourceFileName.startsWith("'") || sourceFileName.startsWith('"')) {
+	sourceFileName = sourceFileName.substring(1, sourceFileName.length - 1);
+}
+
 let outFileName = "a.anc16";
+if (outFileName.startsWith("'") || outFileName.startsWith('"')) {
+	outFileName = outFileName.substring(1, outFileName.length - 1);
+}
 
 if (process.argv.length == 4) {
 	outFileName = process.argv[3];
