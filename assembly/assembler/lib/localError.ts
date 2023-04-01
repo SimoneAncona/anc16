@@ -1,5 +1,6 @@
 import * as colors from "colors";
 import { exit } from "process";
+import { Line } from "./types";
 colors.enable();
 
 type LocalErrorName = "FileNotFound" | "FileAlreadyExist" | "SyntaxError" | "ReferenceError" | "SymbolError" | "FSError" | "ValueError";
@@ -131,4 +132,11 @@ export function printStackExit(errs: Error[]) {
 	console.error("Found " + errs.length.toString().red + (errs.length == 1 ? " error" : " errors"));
 
 	exit(1);
+}
+
+export function lineToString(line: Line): string {
+	let str = "";
+	for (let i = 0; i < line.indentLevel; i++) str += "\t";
+	line.tokens.forEach(tk => str += tk.value + " ");
+	return str;
 }
