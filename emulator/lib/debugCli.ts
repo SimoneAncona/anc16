@@ -1,5 +1,6 @@
 import * as colors from "colors";
 import * as readline from "readline";
+
 colors.enable();
 
 const COMMANDS = [
@@ -112,18 +113,47 @@ To start type ${"run".cyan}
 	);
 
 	for (let i = 0; i < process.stdout.columns; i++) process.stdout.write("━");
-	process.stdin.on("keypress", (str, key) => {
+	let str = "";
+	process.stdin.on("keypress", (chr, key: readline.Key) => {
+		// if (key.name === "tab") {
+		// 	str = setHints(str);
+		// 	return;
+		// }
+		if (key.name === "enter" || key.name === "return") {
+			str = "";
+			return;
+		}
+		if (key.name === "backspace") {
+			str = str.substring(0, str.length - 1);
+			return;
+		}
+		str += chr;
 		showHints(str);
-		if (key === "\t")
-			setHints(str);
-	})
+	});
+
+
 }
 
 function getSimilarCommands(str: string) {
+	let splittedStr = str.split(" ");
 	let cmds: string[] = [];
 
 	for (let cmd of COMMANDS) {
-		if (cmd.startsWith(str)) cmds.push(cmd);
+		let splittedCmd = cmd.split(" ");
+		if (splittedStr.length > splittedCmd.length) continue;
+		let i = 0;
+		let match = true;
+		for (; i < splittedStr.length - 1; i++) {
+			if (splittedStr[i] !== splittedCmd[i]) {
+				match = false;
+				break
+			}
+		}
+		if (!match) continue;
+		if (splittedCmd[i].startsWith(splittedStr[i])) {
+			let hint = splittedCmd.slice(0, i + 1).join(" ");
+			if (!cmds.includes(hint)) cmds.push(hint);
+		}
 	}
 
 	return cmds;
@@ -132,14 +162,20 @@ function getSimilarCommands(str: string) {
 function showHints(str: string) {
 	let cmds = getSimilarCommands(str);
 	if (cmds.length !== 1) return;
-	let cmd = cmds[0].substring(str.length);
+	let cmd = cmds[0].substring(str.length - 1);
 	process.stdout.write(cmd.gray);
-	process.stdout.moveCursor(-cmd.length, 0)
+	process.stdout.moveCursor(-cmd.length, 0);
 }
 
-function setHints(str: string) {
-	process.stdout.write("Pasdf");
-}
+// function setHints(str: string) {
+// 	let cmds = getSimilarCommands(str);
+// 	if (cmds.length !== 1) return;
+// 	let s = cmds[0];
+// 	let cmd = cmds[0].substring(str.length);
+// 	process.stdout.write(cmd);
+// 	process.stdout.moveCursor(-3, 0);
+// 	return s;
+// }
 
 export function getLineDebug() {
 	const rl = readline.createInterface(
