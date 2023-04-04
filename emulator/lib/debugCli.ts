@@ -98,7 +98,7 @@ ${"Others".green}
 	${"exit"}		Exit from emulator
 `;
 
-function printDebugHelp() {
+export function printDebugHelp() {
 	console.log(DEBUG_HELP);
 }
 

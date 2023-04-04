@@ -1,5 +1,5 @@
 import { ANC16 } from "./ANC16";
-import { getLineDebug, initDebug } from "./debugCli";
+import { getLineDebug, initDebug, printDebugHelp } from "./debugCli";
 import { ExternalMemoryConstroller } from "./memoryController";
 import { EmulatorParams } from "./types";
 
@@ -27,7 +27,15 @@ export class Emulator {
 		while (true) {
 			process.stdout.write("> ");
 			const line = await getLineDebug();
-			console.log(line.green);
+			this.decodeDebugCommand(line);
+		}
+	}
+
+	private decodeDebugCommand(str: string) {
+		switch (str) {
+			case "help":
+				printDebugHelp();
+				break;
 		}
 	}
 }
