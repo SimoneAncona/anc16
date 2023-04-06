@@ -57,4 +57,8 @@ export class ExternalMemoryConstroller {
 	getVideoMemory() {
 		return this.memory.subarray(EMEM_VIDEO_START, EMEM_VIDEO_START + EMEM_VIDEO_SIZE);
 	}
+
+	enableVideoOutput() {
+		updateVideo(this.getVideoMemory());
+	}
 }

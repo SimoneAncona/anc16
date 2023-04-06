@@ -1,5 +1,7 @@
 import * as colors from "colors";
 import * as readline from "readline";
+import * as fs from "fs";
+import { printError } from "./consoleError";
 
 colors.enable();
 
@@ -94,8 +96,8 @@ ${"Memory".green}
 	${"video memory dump".cyan} ${"<fileName>".yellow}			Save the content of the video memory as an image
 
 ${"Others".green}
-	${"help"}		Show this list
-	${"exit"}		Exit from emulator
+	${"help".cyan}		Show this list
+	${"exit".cyan}		Exit from emulator
 `;
 
 export function printDebugHelp() {
@@ -105,15 +107,15 @@ export function printDebugHelp() {
 export function initDebug() {
 	console.clear();
 	process.stdout.write(
-		`
-Welcome to the ANC16 debugger
+		`Welcome to the ANC16 debugger
 For more information type ${"help".cyan}
 To start type ${"run".cyan}
 `
 	);
 
-	for (let i = 0; i < process.stdout.columns; i++) process.stdout.write("━");
+	for (let i = 0; i < process.stdout.columns; i++) process.stdout.write("─");
 	let str = "";
+	process.stdin.setRawMode(true);
 	process.stdin.on("keypress", (chr, key: readline.Key) => {
 		// if (key.name === "tab") {
 		// 	str = setHints(str);
@@ -167,15 +169,29 @@ function showHints(str: string) {
 	process.stdout.moveCursor(-cmd.length, 0);
 }
 
-// function setHints(str: string) {
-// 	let cmds = getSimilarCommands(str);
-// 	if (cmds.length !== 1) return;
-// 	let s = cmds[0];
-// 	let cmd = cmds[0].substring(str.length);
-// 	process.stdout.write(cmd);
-// 	process.stdout.moveCursor(-3, 0);
-// 	return s;
-// }
+function setHints(str: string) {
+	let cmds = getSimilarCommands(str);
+	if (cmds.length !== 1) return;
+	let cmd = cmds[0];
+	process.stdout.write(cmd);
+	return cmd;
+}
+
+export async function debugAsk(message: string, onAccept: () => void, onDecline: () => void) {
+	process.stdout.write(message + ` [${"Y".green}/${"n".red}] `);
+	let line = await getLineDebug();
+	if (line === "" || line.toLowerCase() === "y") {
+		onAccept();
+		return;
+	}
+	if (line.toLowerCase() === "n") {
+		onDecline();
+		return;
+	}
+	process.stdout.moveCursor(0, -1);
+	process.stdout.clearLine(0);
+	printError("input error");
+}
 
 export function getLineDebug() {
 	const rl = readline.createInterface(

@@ -8,7 +8,7 @@ let ctx = canvas.getContext("2d");
 export function updateVideo(memory: Uint8ClampedArray) {
 	if (memory.length != RESOLUTION) throw "Invalid video memory segment";
 	let vm = ctx.createImageData(WIDTH, HEIGHT);
-	
+
 	for (let i = 0; i < vm.data.length; i += 4) {
 		let color8bit = memory[i / 4];
 		let red = color8bit & 0b11100000;

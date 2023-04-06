@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "build": "tsc --build",
-    "start": "tsc --build && cls && echo ------------------------ && node index.js --help",
+    "start": "tsc --build && node index.js .\\test\\os.rom .\\test\\char.rom -d",
     "test": "echo \"Error: no test specified\" && exit 1",
     "distribute": "npx pkg -t node18-linux-x64, node18-macos-x64, node18-win-x64, node18-linux-arm64, node18-macos-arm64, node18-win-arm64 index.js"
   },
@@ -18,6 +18,7 @@
     "colors": "^1.4.0",
     "fs": "^0.0.1-security",
     "http-cache-semantics": "^4.1.1",
+    "node-gyp": "^9.3.1",
     "omelette": "^0.4.17",
     "typescript": "^4.9.5"
   }
