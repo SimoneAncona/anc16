@@ -1,6 +1,6 @@
 import { exit } from "process";
 import { printError } from "./consoleError";
-import { updateVideo } from "./video";
+import { initVideo, updateVideo } from "./video";
 
 const MEMORY_SIZE = 0xFFFF;
 
@@ -21,6 +21,7 @@ export class ExternalMemoryConstroller {
 
 	constructor() {
 		this.memory = new Uint8ClampedArray(MEMORY_SIZE);
+		initVideo();
 	}
 
 	getFullMemory() {

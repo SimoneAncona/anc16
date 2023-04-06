@@ -1,2 +1,1 @@
-Start-Process choco -ArgumentList install, -y, python2, gtk-runtime, microsoft-build-tools, libjpeg-turbo -Verb runAs -Wait
-Expand-Archive .\gtk+-bundle_2.22.1-20101229_win64.zip -DestinationPath "C:\GTK"
+Expand-Archive sdl2.zip -DestinationPath "C:\SDL"
