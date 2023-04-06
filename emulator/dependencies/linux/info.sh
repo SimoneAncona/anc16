@@ -1,0 +1,1 @@
+echo "For more information check the official project documentation at https://github.com/Automattic/node-canvas"

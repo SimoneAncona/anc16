@@ -1,0 +1,1 @@
+pkgin install cairo pango pkg-config xproto renderproto kbproto xextproto
