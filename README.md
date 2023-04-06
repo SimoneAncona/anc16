@@ -322,6 +322,6 @@ Is used to free memory dynamically.
 - Return
   - **AH**: 0x01 in case of error.
 
-**On Reset**
+## On Reset
 
 When the CPU is restarted or turned on, the **PC** is set to FE00, where the firmware resides. The **SR** is set to: n o I D S 1 z c (uppercase = 1)
