@@ -1,4 +1,4 @@
-import * as colors from "colors";
+import colors from "colors";
 colors.enable();
 
 export function printError(message: string) {

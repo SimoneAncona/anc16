@@ -1,7 +1,7 @@
-import { EmulatorOptions, ParamFlag } from "./types";
-import * as colors from "colors";
-import * as fs from "fs";
-import { printError } from "./consoleError";
+import { EmulatorOptions, ParamFlag } from "./types.js";
+import colors from "colors";
+import fs from "fs";
+import { printError } from "./consoleError.js";
 import { exit } from "process";
 colors.enable();
 

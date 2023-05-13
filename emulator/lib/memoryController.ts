@@ -1,26 +1,26 @@
 import { exit } from "process";
-import { printError } from "./consoleError";
-import { initVideo, updateVideo } from "./video";
+import { printError } from "./consoleError.js";
+import { initVideo, updateVideo } from "./video.js";
+import { AVC64 } from "./AVC64.js";
 
-const MEMORY_SIZE = 0xFFFF;
+const MEMORY_SIZE = 0x10000;
 
 const EMEM_OS_START = 0;
-const EMEM_OS_SIZE = 8192;
-const EMEM_CHR_START = EMEM_OS_SIZE;
-const EMEM_CHR_SIZE = 5888;
-const EMEM_CARD_SLOT_START = 0x3700;
-const EMEM_CARD_SLOT_SIZE = 8253;
-const EMEM_VIDEO_START = 0x573D;
-const EMEM_VIDEO_SIZE = 43200;
+const EMEM_OS_SIZE = 16384;
+const EMEM_CARD_SLOT_START = 0x4000;
+const EMEM_CARD_SLOT_SIZE = 49145;
+const EMEM_VIDEO_CHIP_START = 0xFFF9;
+const EMEM_VIDEO_CHIP_SIZE = 4;
 const EMEM_KEYBOARD = 0xFFFD;
 const EMEM_MOUSE = 0xFFFE;
 const EMEM_AUDIO = 0xFFFF;
 
-export class ExternalMemoryConstroller {
-	private memory: Uint8ClampedArray;
+export class ExternalMemoryController {
+	private memory: Uint8Array;
+	private gpu: AVC64;
 
 	constructor() {
-		this.memory = new Uint8ClampedArray(MEMORY_SIZE);
+		this.memory = new Uint8Array(MEMORY_SIZE);
 		initVideo();
 	}
 
@@ -30,7 +30,7 @@ export class ExternalMemoryConstroller {
 
 	setCard(binary: Uint8Array) {
 		if (binary.length > EMEM_CARD_SLOT_SIZE) {
-			printError("the card binary file exceeds " + EMEM_CARD_SLOT_SIZE + " bytes");
+			printError("The card binary file exceeds " + EMEM_CARD_SLOT_SIZE + " bytes");
 			exit(1);
 		}
 
@@ -39,7 +39,7 @@ export class ExternalMemoryConstroller {
 
 	setOs(binary: Uint8Array) {
 		if (binary.length > EMEM_OS_SIZE) {
-			printError("the os rom binary file exceeds " + EMEM_OS_SIZE + " bytes");
+			printError("The OS rom binary file exceeds " + EMEM_OS_SIZE + " bytes");
 			exit(1);
 		}
 
@@ -47,19 +47,22 @@ export class ExternalMemoryConstroller {
 	}
 
 	setChar(binary: Uint8Array) {
-		if (binary.length > EMEM_CHR_SIZE) {
-			printError("the char map binary file exceeds " + EMEM_CHR_SIZE + " bytes");
-			exit(1);
-		}
+		
+	}
 
-		this.memory.set(binary, EMEM_CHR_START);
+	setVideoChip(avc: AVC64) {
+		this.gpu = avc;
 	}
 
 	getVideoMemory() {
-		return this.memory.subarray(EMEM_VIDEO_START, EMEM_VIDEO_START + EMEM_VIDEO_SIZE);
+		return this.gpu.getVideoMemory();
 	}
 
 	enableVideoOutput() {
-		updateVideo(this.getVideoMemory());
+		
+	}
+
+	setMemory(data: number, address: number) {
+
 	}
 }

@@ -3,9 +3,10 @@
   "version": "1.0.0",
   "description": "ANC16 v1 standard emulator",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "build": "tsc --build",
-    "start": "tsc --build && node index.js .\\test\\os.rom .\\test\\char.rom -d",
+    "start": "tsc --build && start node index.js .\\test\\os.rom .\\test\\char.rom -d",
     "test": "echo \"Error: no test specified\" && exit 1",
     "distribute": "npx pkg -t node18-linux-x64, node18-macos-x64, node18-win-x64, node18-linux-arm64, node18-macos-arm64, node18-win-arm64 index.js"
   },
@@ -13,14 +14,11 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^18.13.0",
-    "@types/omelette": "^0.4.2",
     "colors": "^1.4.0",
     "fs": "^0.0.1-security",
     "http-cache-semantics": "^4.1.1",
     "node-gyp": "^9.3.1",
-    "node-sdl": "^1.0.2",
-    "omelette": "^0.4.17",
-    "raster": "^0.7.6",
+    "simply2d": "^1.0.4",
     "typescript": "^4.9.5"
   }
 }

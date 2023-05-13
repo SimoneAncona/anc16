@@ -1,0 +1,38 @@
+The video card is used to handle a display. This emulator emulates an AVC64 Video Card.
+The AVC64 Video Card can handle a 224 * 256 px display with 256 colors.
+This card has 2 drawing modes:
+- single pixel  (0x00)
+- texture       (0x01)
+The bus are
+8 x coordinates bus  
+    - used in single pixel mode for passing coordinates
+8 y coordinates bus
+    - used in single pixel mode for passing coordinates
+8 bit data bus      
+    - in single pixel mode is used for passing the color
+    - in texture mode is used to pass the texture ID
+1 bit mode bus
+    - 0 R (read) used to read a color of a certain pixel in single pixel mode
+    - 1 W (write)
+2 bit operation bus
+    - SP (0x00) Single Pixel (R to read a color of a pixel, W to write a pixel)
+    - TX (0x01) TeXture (mode bus must be W)
+    - CL (0x02) CLear the screen with the color specified in data bus (mode bus must be W)
+    - NOP (0x03) No Operations
+
+Video card internal mapping:
+  from <included> to <included> <size B> <info>
+- from 0x0000     to 0x1FFF     8'192    Texture and font map
+- from 0x2000     to 0xFFFF     57'344   Video memory (256 * 224 resolution 256 colors)
+
+Texture and font file header:
+    0       1       2       3       4    5  5       6       7   (bytes)
+0   |ID             |WIDTH  |HEIGHT |0000|CL|  ...DATA...
+
+Where CL can be:
+- 2 colors mode            (1 bit size)
+- 2 colors 1 alpha mode    (2 bit size)
+- 16 colors mode           (4 bit size)
+- 16 colors 16 alpha mode  (8 bit size)
+- 256 colors mode          (8 bit size)
+- 256 colors 16 alpha mode (12 bit size)

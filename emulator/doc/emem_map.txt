@@ -1,0 +1,18 @@
+This is the external memory mapping for this emulator:
+  from <included> to <included> <size B> <info>
+- from 0x0000     to 0x3FFF     16'384   OS and swap memory
+- from 0x4000     to 0xFFF7     49'144   Card slot (external file system)
+- from 0xFFF8     to 0xFFFC     5        Video card
+    -  0xFFF8                   1        X coordinate
+    -  0xFFF9                   1        Y coordinate
+    -  0xFFFA                   1        Data (Color or Texture ID ...)
+    -  0xFFFB                   1        Mode (Write)
+    -  0xFFFC                   1        Single Pixel (Read)
+-      0xFFFD                   1        Keyboard
+-      0xFFFE                   1        Mouse
+-      0xFFFF                   1        Audio
+
+Video card internal mapping:
+  from <included> to <included> <size B> <info>
+- from 0x0000     to 0x1FFF     8'192    Texture and font map
+- from 0x2000     to 0xFFFF     57'344   Video memory (256 * 224 resolution 256 colors)

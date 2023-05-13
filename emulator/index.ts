@@ -1,6 +1,6 @@
-import { processArguments } from "./lib/command";
-import { Emulator } from "./lib/emu";
-import { EmulatorParams } from "./lib/types";
+import { processArguments } from "./lib/command.js";
+import { Emulator } from "./lib/emu.js";
+import { EmulatorParams } from "./lib/types.js";
 
 let emuParams: EmulatorParams;
 let emu: Emulator;
