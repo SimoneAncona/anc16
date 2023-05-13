@@ -2387,7 +2387,7 @@ function setAddressFromSymbol(accessFrom: string[], symbol: string, labels: Labe
 					}
 				} else {
 					// @ts-ignore
-					data.value = (label.address as number - (fromAddress - 2));
+					data.value = (label.address as number - (fromAddress - 3));
 					data.size = 1;
 					// @ts-ignore
 					if (!fits8bit(data.value as number * 2)) {

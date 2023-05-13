@@ -42,17 +42,14 @@ export class Emulator {
 
 	private async debugCliLoop() {
 		while (true) {
-			if (this.runStatus) {
-				updateDebugCPUStats(this.cpu.getCpuStatus());
-			} else {
-				process.stdout.write("> ");
-				const line = await getLineDebug();
-				await this.decodeDebugCommand(line);
-			}
+			process.stdout.write("> ");
+			const line = await getLineDebug();
+			await this.decodeDebugCommand(line);
 		}
 	}
 
 	private async decodeDebugCommand(str: string) {
+		const jumps = ["jmp", "jeq", "jne", "jns", "jnc", "jos", "joc", "jcc", "jcs"];
 		switch (str) {
 			case "help":
 				printDebugHelp();
@@ -66,6 +63,30 @@ export class Emulator {
 			case "run":
 				this.runStatus = true;
 				debugCPUStats(this.cpu.getCpuStatus());
+				while (true) {
+					this.cpu.nextInstruction();
+					updateDebugCPUStats(this.cpu.getCpuStatus());
+				}
+			case "ni": case "next instruction":
+				this.cpu.nextInstruction();
+				debugCPUStats(this.cpu.getCpuStatus());
+				break;
+			case "nj": case "next jump":
+				this.runStatus = true;
+				debugCPUStats(this.cpu.getCpuStatus());
+				while (!jumps.includes(this.cpu.getCurrentInstruction())) {
+					this.cpu.nextInstruction();
+					updateDebugCPUStats(this.cpu.getCpuStatus());
+				}
+				this.runStatus = false;
+				break;
+			case "nr": case "next return":
+				this.runStatus = true;
+				debugCPUStats(this.cpu.getCpuStatus());
+				while (this.cpu.getCurrentInstruction() !== "ret") {
+					this.cpu.nextInstruction();
+				}
+				this.runStatus = false;
 				break;
 			default:
 				printError("unrecognized command. Type 'help' for more information");

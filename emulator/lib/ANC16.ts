@@ -1,6 +1,6 @@
 import { getInfo } from "./isa.js";
 import { ExternalMemoryController } from "./memoryController.js";
-import { Register16, Register16HighLow, Register8, StatusRegister, add16bits, add8bits } from "./registers.js";
+import { Register16, Register16HighLow, Register8, StatusRegister, add16bits, add8bits, expandTo16bits, getHigh, getLow, msbit } from "./registers.js";
 import { AddressingMode, CPUStatus, Instruction } from "./types.js";
 
 // Constants
@@ -24,6 +24,8 @@ const EAOOR_VECTOR = 0x200C;
 const SPOOR_VECTOR = 0x200E;
 const PC_STACK_VECTOR = 0x2010;
 const SR_STACK_VECTOR = 0x2012;
+const A_STACK_VECTOR = 0x2013;
+const B_STACK_VECTOR = 0x2015;
 
 const RET = 0x80FF;
 
@@ -109,7 +111,12 @@ export class ANC16 {
 	private fetchDecode() {
 		let opc = this.iMem[this.pc.get()] << 8 | this.iMem[this.pc.get() + 1];
 		let ins = getInfo(opc);
+		if (ins === null) {
+			this.nmi(1);
+			return;
+		}
 		this.currentInstruction = ins.mnemonic;
+		this.ir.set(opc);
 		this.privileged = ins.needPrivileges;
 		this.addressing = ins.addressing;
 		switch (this.addressing) {
@@ -178,13 +185,46 @@ export class ANC16 {
 		}
 	}
 
+	private fetchStack(wordSize = true) {
+		if (this.spOORguard()) return;
+		return wordSize ? this.iMem[this.sp.get()] << 8 | this.iMem[add16bits(this.sp.get(), 1).result] : this.iMem[this.sp.get()];
+	}
+
 	// interrupts
-	eirq(address: number) {
+	eirq(address: number, data: number) {
 
 	}
 
 	private nmi(al: number) {
+
+	}
+
+	private spOutOfRange() {
+
+	}
+
+	private iaOutOfRange() {
+
+	}
+
+	private eaOutOfRange() {
 		
+	}
+
+	private sysPrivilegesGuard() {
+		if (!this.sr.getS()) {
+			this.nmi(2);
+			return true;
+		}
+		return false;
+	}
+
+	private spOORguard() {
+		if (this.sp.get() < this.imli.get() || this.sp.get() >= this.imhi.get()) {
+			this.spOutOfRange();
+			return true;
+		}
+		return false;
 	}
 
 	// instructions
@@ -269,10 +309,12 @@ export class ANC16 {
 	}
 
 	private cld() {
+		if (this.sysPrivilegesGuard()) return;
 		this.sr.setD(false);
 	}
 
 	private cli() {
+		if (this.sysPrivilegesGuard()) return;
 		this.sr.setI(false);
 	}
 
@@ -281,6 +323,7 @@ export class ANC16 {
 	}
 
 	private cls() {
+		if (this.sysPrivilegesGuard()) return;
 		this.sr.setS(false);
 	}
 
@@ -378,10 +421,10 @@ export class ANC16 {
 					this.pc.set(this.argument);
 					break;
 				case "relative":
-					this.pc.add(this.argument);
+					this.pc.add(expandTo16bits(this.argument));
 					break;
 				case "relativeUsingJ":
-					this.pc.add(this.j.get());
+					this.pc.add(expandTo16bits(this.j.get()));
 					break;
 			}
 	}
@@ -393,10 +436,10 @@ export class ANC16 {
 					this.pc.set(this.argument);
 					break;
 				case "relative":
-					this.pc.add(this.argument);
+					this.pc.add(expandTo16bits(this.argument));
 					break;
 				case "relativeUsingJ":
-					this.pc.add(this.j.get());
+					this.pc.add(expandTo16bits(this.j.get()));
 					break;
 			}
 	}
@@ -408,10 +451,10 @@ export class ANC16 {
 					this.pc.set(this.argument);
 					break;
 				case "relative":
-					this.pc.add(this.argument);
+					this.pc.add(expandTo16bits(this.argument));
 					break;
 				case "relativeUsingJ":
-					this.pc.add(this.j.get());
+					this.pc.add(expandTo16bits(this.j.get()));
 					break;
 			}
 	}
@@ -423,10 +466,10 @@ export class ANC16 {
 				this.pc.set(this.argument);
 				break;
 			case "relative":
-				this.pc.add(this.argument);
+				this.pc.add(expandTo16bits(this.argument));
 				break;
 			case "relativeUsingJ":
-				this.pc.add(this.j.get());
+				this.pc.add(expandTo16bits(this.j.get()));
 				break;
 		}
 	}
@@ -438,10 +481,10 @@ export class ANC16 {
 					this.pc.set(this.argument);
 					break;
 				case "relative":
-					this.pc.add(this.argument);
+					this.pc.add(expandTo16bits(this.argument));
 					break;
 				case "relativeUsingJ":
-					this.pc.add(this.j.get());
+					this.pc.add(expandTo16bits(this.j.get()));
 					break;
 			}
 	}
@@ -453,10 +496,10 @@ export class ANC16 {
 					this.pc.set(this.argument);
 					break;
 				case "relative":
-					this.pc.add(this.argument);
+					this.pc.add(expandTo16bits(this.argument));
 					break;
 				case "relativeUsingJ":
-					this.pc.add(this.j.get());
+					this.pc.add(expandTo16bits(this.j.get()));
 					break;
 			}
 	}
@@ -468,10 +511,10 @@ export class ANC16 {
 					this.pc.set(this.argument);
 					break;
 				case "relative":
-					this.pc.add(this.argument);
+					this.pc.add(expandTo16bits(this.argument));
 					break;
 				case "relativeUsingJ":
-					this.pc.add(this.j.get());
+					this.pc.add(expandTo16bits(this.j.get()));
 					break;
 			}
 	}
@@ -483,10 +526,10 @@ export class ANC16 {
 					this.pc.set(this.argument);
 					break;
 				case "relative":
-					this.pc.add(this.argument);
+					this.pc.add(expandTo16bits(this.argument));
 					break;
 				case "relativeUsingJ":
-					this.pc.add(this.j.get());
+					this.pc.add(expandTo16bits(this.j.get()));
 					break;
 			}
 	}
@@ -498,101 +541,212 @@ export class ANC16 {
 					this.pc.set(this.argument);
 					break;
 				case "relative":
-					this.pc.add(this.argument);
+					this.pc.add(expandTo16bits(this.argument));
 					break;
 				case "relativeUsingJ":
-					this.pc.add(this.j.get());
+					this.pc.add(expandTo16bits(this.j.get()));
 					break;
 			}
 	}
 
 	private kill() {
-		if (!this.sr.getS())
+		if (this.sysPrivilegesGuard()) return;
 		throw "Execution halted";
 	}
 
 	private lda() {
-		
+		let op = this.getOperand();
+		this.a.set(op);
+		this.sr.setZ(op === 0);
+		this.sr.setN(msbit(op, 16));
 	}
 
 	private ldah() {
-
+		let op = this.getOperand();
+		this.a.setHigh(op);
+		this.sr.setZ(op === 0);
+		this.sr.setN(msbit(op, 8));
 	}
 
 	private ldal() {
-
+		let op = this.getOperand();
+		this.a.setLow(op);
+		this.sr.setZ(op === 0);
+		this.sr.setN(msbit(op, 8));
 	}
 
 	private ldb() {
-
+		let op = this.getOperand();
+		this.b.set(op);
+		this.sr.setZ(op === 0);
+		this.sr.setN(msbit(op, 16));
 	}
 
 	private ldbh() {
-
+		let op = this.getOperand();
+		this.b.setHigh(op);
+		this.sr.setZ(op === 0);
+		this.sr.setN(msbit(op, 8));
 	}
 
 	private ldbl() {
-
+		let op = this.getOperand();
+		this.b.setLow(op);
+		this.sr.setZ(op === 0);
+		this.sr.setN(msbit(op, 8));
 	}
 
 	private lddr() {
-
+		if (this.sysPrivilegesGuard()) return;
+		let op = this.getOperand();
+		this.dr.set(op);
+		this.sr.setZ(op === 0);
+		this.sr.setN(msbit(op, 16));
 	}
 
 	private ldi() {
-
+		let op = this.getOperand();
+		this.i.set(op);
+		this.sr.setZ(op === 0);
+		this.sr.setN(msbit(op, 16));
 	}
 
 	private ldj() {
-
+		let op = this.getOperand();
+		this.j.set(op);
+		this.sr.setZ(op === 0);
+		this.sr.setN(msbit(op, 8));
 	}
 
 	private ldsp() {
-
+		let op = this.getOperand();
+		this.sp.set(op);
+		this.sr.setZ(op === 0);
+		this.sr.setN(msbit(op, 16));
 	}
 
 	private ldsr() {
-
+		let op = this.getOperand();
+		this.sr.set(op);
 	}
 
 	private lemh() {
-
+		if (this.sysPrivilegesGuard()) return;
+		let op = this.getOperand();
+		this.emhi.set(op);
+		this.sr.setZ(op === 0);
+		this.sr.setN(msbit(op, 16));
 	}
 
 	private leml() {
-
+		if (this.sysPrivilegesGuard()) return;
+		let op = this.getOperand();
+		this.emli.set(op);
+		this.sr.setZ(op === 0);
+		this.sr.setN(msbit(op, 16));
 	}
 
 	private limh() {
-
+		if (this.sysPrivilegesGuard()) return;
+		let op = this.getOperand();
+		this.imhi.set(op);
+		this.sr.setZ(op === 0);
+		this.sr.setN(msbit(op, 16));
 	}
 
 	private liml() {
-
+		if (this.sysPrivilegesGuard()) return;
+		let op = this.getOperand();
+		this.imli.set(op);
+		this.sr.setZ(op === 0);
+		this.sr.setN(msbit(op, 16));
 	}
 
 	private msb() {
-
+		this.sr.setZ(msbit(this.getOperand(), 16));
 	}
 
 	private nop() {
-
+		return;
 	}
 
 	private ora() {
-
+		let res;
+		switch (this.addressing) {
+			case "immediate1":
+				res = this.a.orLow(this.getOperand());
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+			default:
+				res = this.a.or(this.getOperand());
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+		}
 	}
 
 	private orb() {
-
+		let res;
+		switch (this.addressing) {
+			case "immediate1":
+				res = this.b.orLow(this.getOperand());
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+			default:
+				res = this.b.or(this.getOperand());
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+		}
 	}
 
 	private pop() {
-
+		switch (this.addressing) {
+			case "accumulatorRegister":
+				this.sp.sub(2);
+				this.a.set(this.fetchStack());
+				break;
+			case "baseRegister":
+				this.sp.sub(2);
+				this.b.set(this.fetchStack());
+				break;
+			case "accumulatorHighRegister":
+				this.sp.sub(1);
+				this.a.setHigh(this.fetchStack(false));
+				break;
+			case "accumulatorLowRegister":
+				this.sp.sub(1);
+				this.a.setLow(this.fetchStack(false));
+				break;
+		}
 	}
 
 	private psh() {
-
+		if (this.spOORguard()) return;
+		let op;
+		switch (this.addressing) {
+			case "accumulatorHighRegister": case "accumulatorLowRegister": case "immediate1":
+				this.iMem[this.sp.get()] = this.getOperand(false);
+				this.sp.add(1);
+				return;
+			case "implied":
+				this.iMem[this.sp.get()] = this.sr.get();
+				this.sp.add(1);
+				this.iMem[this.sp.get()] = getHigh(add16bits(this.pc.get(), 5).result);
+				this.sp.add(1);
+				this.iMem[this.sp.get()] = getLow(add16bits(this.pc.get(), 5).result);
+				this.sp.add(1);
+				return;
+			default:
+				op = this.getOperand();
+				this.iMem[this.sp.get()] = getHigh(op);
+				this.sp.add(1);
+				this.iMem[this.sp.get()] = getLow(op);
+				this.sp.add(1);
+				return;
+		}
 	}
 
 	private read() {
@@ -600,23 +754,30 @@ export class ANC16 {
 	}
 
 	private rest() {
-
+		if (this.sysPrivilegesGuard()) return;
+		this.reset();
 	}
 
 	private ret() {
-
+		this.sp.sub(2);
+		this.pc.set(this.fetchStack());
+		this.sp.sub(1);
+		this.sr.set(this.fetchStack(false));
+		return;
 	}
 
 	private sed() {
-
+		if (this.sysPrivilegesGuard()) return;
+		this.sr.setD(true);
 	}
 
 	private sei() {
-
+		if (this.sysPrivilegesGuard()) return;
+		this.sr.setI(true);
 	}
 
 	private semh() {
-
+		
 	}
 
 	private seml() {
@@ -793,7 +954,7 @@ export class ANC16 {
 			emhi: this.emhi.toHexString(),
 			ar: this.ar.toHexString(),
 
-			currentInstruction: ""
+			currentInstruction: this.currentInstruction
 		}
 
 		return cpuStatus;

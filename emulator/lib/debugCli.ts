@@ -271,16 +271,17 @@ function writeRegister(cpuStatus: CPUStatus, width: number, compressed: boolean)
 	process.stdout.write(" PC ".bgWhite.black + " : ");
 	process.stdout.write(cpuStatus.pc);
 
-	for (let i = 0; i < width / 2 - 32; i++)
+	for (let i = 0; i < width / 2 - 35; i++)
 		process.stdout.write(" ");
 	process.stdout.write(" IR ".bgWhite.black + " : ");
 	process.stdout.write(cpuStatus.ir);
+	process.stdout.write(" (" + cpuStatus.currentInstruction + ")");
 
 	process.stdout.cursorTo(2, compressed ? 6 : 9);
 	process.stdout.write(" SP ".bgBlue + " : ");
 	process.stdout.write(cpuStatus.sp);
 
-	for (let i = 0; i < width / 2 - 32; i++)
+	for (let i = 0; i < width / 2 - 35; i++)
 		process.stdout.write(" ");
 	process.stdout.write(" DR ".bgWhite.black + " : ");
 	process.stdout.write(cpuStatus.dr);
@@ -313,5 +314,6 @@ function writeRegister(cpuStatus: CPUStatus, width: number, compressed: boolean)
 }
 
 export function updateDebugCPUStats(cpuStatus: CPUStatus) {
-
+	const compressed = process.stdout.rows < 20;
+	writeRegister(cpuStatus, process.stdout.columns, compressed);
 }

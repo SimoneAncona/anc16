@@ -1,4 +1,4 @@
-import isa from "./anc16_isa.json";
+import isa from "./anc16_isa.json" assert { type: "json" };;
 import { AddressingMode, Instruction } from "./types.js";
 
 export function getInfo(opcode: number) {

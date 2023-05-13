@@ -56,6 +56,20 @@ export function msbit(n: number, bits: 8 | 16) {
 	return (n >> bits - 1) === 1;
 }
 
+export function expandTo16bits(n: number) {
+	let sign = msbit(n, 8);
+	if (sign) return 0xFF00 | n;
+	return n;
+}
+
+export function getHigh(n: number) {
+	return (n & 0xFF00) >> 8;
+}
+
+export function getLow(n: number) {
+	return n & 0x00FF;
+}
+
 export class Register8 {
 	private value: Uint8Array;
 
