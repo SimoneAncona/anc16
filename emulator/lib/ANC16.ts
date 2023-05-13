@@ -1,6 +1,6 @@
 import { getInfo } from "./isa.js";
 import { ExternalMemoryController } from "./memoryController.js";
-import { Register16, Register16HighLow, Register8, StatusRegister, add16bit } from "./registers.js";
+import { Register16, Register16HighLow, Register8, StatusRegister, add16bits, add8bits } from "./registers.js";
 import { AddressingMode, CPUStatus, Instruction } from "./types.js";
 
 // Constants
@@ -24,6 +24,8 @@ const EAOOR_VECTOR = 0x200C;
 const SPOOR_VECTOR = 0x200E;
 const PC_STACK_VECTOR = 0x2010;
 const SR_STACK_VECTOR = 0x2012;
+
+const RET = 0x80FF;
 
 export class ANC16 {
 	// GPRs
@@ -112,12 +114,12 @@ export class ANC16 {
 		this.addressing = ins.addressing;
 		switch (this.addressing) {
 			case "absolute": case "absoluteIndexed": case "immediate2": case "indirect": case "indirectIndexed":
-				this.argument = this.iMem[add16bit(this.pc.get(), 2).result] << 8 | this.iMem[add16bit(this.pc.get(), 3).result];
+				this.argument = this.iMem[add16bits(this.pc.get(), 2).result] << 8 | this.iMem[add16bits(this.pc.get(), 3).result];
 				this.argsize = 16;
 				this.pc.add(4);
 				break;
 			case "relative": case "zeroPage": case "zeroPageIndexed": case "immediate1":
-				this.argument = this.iMem[add16bit(this.pc.get(), 2).result];
+				this.argument = this.iMem[add16bits(this.pc.get(), 2).result];
 				this.argsize = 8;
 				this.pc.add(3);
 				break;
@@ -142,162 +144,375 @@ export class ANC16 {
 	}
 
 	private getOperand(wordSize: boolean = true) {
+		let indexed;
+		let indirect;
 		switch (this.addressing) {
-			case "immediate1": case "immediate2":
+			case "immediate1": case "immediate2": case "immediate":
 				return this.argument;
-			case "absolute":
-				return wordSize ? this.iMem[this.argument] << 8 | this.iMem[add16bit(this.argument, 1).result] : this.iMem[this.argument];
+			case "absolute": case "zeroPage":
+				return wordSize ? this.iMem[this.argument] << 8 | this.iMem[add16bits(this.argument, 1).result] : this.iMem[this.argument];
+			case "accumulatorHighRegister": return this.a.getHigh();
+			case "accumulatorLowRegister": return this.a.getLow();
+			case "accumulatorRegister": return this.a.get();
+			case "baseHighRegister": return this.b.getHigh();
+			case "baseLowRegister": return this.b.getLow();
+			case "baseRegister": return this.b.get();
+			case "indexRegister": return this.i.get();
+			case "absoluteIndexed": case "zeroPageIndexed":
+				indexed = add16bits(this.argument, this.i.get()).result;
+				return wordSize ? this.iMem[indexed] << 8 | this.iMem[add16bits(indexed, 1).result] : this.iMem[indexed];
+			case "implied": return;
+			case "indirect":
+				indirect = this.iMem[this.argument] << 8 | this.iMem[add16bits(this.argument, 1).result];
+				return wordSize ? this.iMem[indirect] << 8 | this.iMem[add16bits(indirect, 1).result] : this.iMem[indirect];
+			case "indirectIndexed":
+				indirect = this.iMem[this.argument] << 8 | this.iMem[add16bits(this.argument, 1).result];
+				indexed = add16bits(indirect, this.i.get()).result;
+				return wordSize ? this.iMem[indexed] << 8 | this.iMem[add16bits(indexed, 1).result] : this.iMem[indexed];
+			case "relative":
+				indexed = add16bits(this.argument, this.pc.get()).result;
+				return wordSize ? this.iMem[indexed] << 8 | this.iMem[add16bits(indexed, 1).result] : this.iMem[indexed];
+			case "relativeUsingJ":
+				indexed = add16bits(this.j.get(), this.pc.get()).result;
+				return wordSize ? this.iMem[indexed] << 8 | this.iMem[add16bits(indexed, 1).result] : this.iMem[indexed];
 		}
+	}
+
+	// interrupts
+	eirq(address: number) {
+
+	}
+
+	private nmi(al: number) {
+		
 	}
 
 	// instructions
 	private ada() {
+		let res;
 		switch (this.addressing) {
-			case "accumulatorHighRegister": case "baseHighRegister":
-				let res = this.a.addHigh(this.getOperand());
+			case "immediate1":
+				res = this.a.addLow(this.getOperand());
 				this.sr.setO(res.overflow);
 				this.sr.setC(res.carry);
 				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
 				break;
-			case "accumulatorLowRegister": case "baseLowRegister":
+			default:
+				res = this.a.add(this.getOperand());
+				this.sr.setO(res.overflow);
+				this.sr.setC(res.carry);
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
 		}
-		this.a.add(this.getOperand())
 	}
 
 	private adb() {
-
+		let res;
+		switch (this.addressing) {
+			case "immediate1":
+				res = this.b.addLow(this.getOperand());
+				this.sr.setO(res.overflow);
+				this.sr.setC(res.carry);
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+			default:
+				res = this.b.add(this.getOperand());
+				this.sr.setO(res.overflow);
+				this.sr.setC(res.carry);
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+		}
 	}
 
 	private ana() {
-
+		let res;
+		switch (this.addressing) {
+			case "immediate1":
+				res = this.a.andLow(this.getOperand());
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+			default:
+				res = this.a.and(this.getOperand());
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+		}
 	}
 
 	private anb() {
-
+		let res;
+		switch (this.addressing) {
+			case "immediate1":
+				res = this.b.andLow(this.getOperand());
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+			default:
+				res = this.b.and(this.getOperand());
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+		}
 	}
 
 	private aret() {
-
+		this.sr.setZ(this.a.get() === RET);
 	}
 
 	private clc() {
-
+		this.sr.setC(false);
 	}
 
 	private cld() {
-
+		this.sr.setD(false);
 	}
 
 	private cli() {
-
+		this.sr.setI(false);
 	}
 
 	private clo() {
-
+		this.sr.setO(false);
 	}
 
 	private cls() {
-
+		this.sr.setS(false);
 	}
 
 	private cmah() {
-
+		let res = add8bits(this.a.getHigh(), -this.getOperand());
+		this.sr.setC(res.carry);
+		this.sr.setN(res.negative);
+		this.sr.setZ(res.zero);
 	}
 
 	private cmbh() {
-
+		let res = add8bits(this.b.getHigh(), -this.getOperand());
+		this.sr.setC(res.carry);
+		this.sr.setN(res.negative);
+		this.sr.setZ(res.zero);
 	}
 
 	private cmpa() {
-
+		let res = add8bits(this.a.get(), -this.getOperand());
+		this.sr.setC(res.carry);
+		this.sr.setN(res.negative);
+		this.sr.setZ(res.zero);
 	}
 
 	private cmpb() {
-
+		let res = add8bits(this.b.get(), -this.getOperand());
+		this.sr.setC(res.carry);
+		this.sr.setN(res.negative);
+		this.sr.setZ(res.zero);
 	}
 
 	private cmpi() {
-
+		let res = add8bits(this.i.get(), -this.getOperand());
+		this.sr.setC(res.carry);
+		this.sr.setN(res.negative);
+		this.sr.setZ(res.zero);
 	}
 
 	private cpuid() {
-
+		this.a.setLow(1);
 	}
 
 	private dea() {
-
+		let res = this.a.sub(1);
+		this.sr.setN(res.negative);
+		this.sr.setZ(res.zero);
 	}
 
 	private deb() {
-
+		let res = this.b.sub(1);
+		this.sr.setN(res.negative);
+		this.sr.setZ(res.zero);
 	}
 
 	private dei() {
-
+		let res = this.i.sub(1);
+		this.sr.setN(res.negative);
+		this.sr.setZ(res.zero);
 	}
 
 	private dej() {
-
+		let res = this.j.sub(1);
+		this.sr.setN(res.negative);
+		this.sr.setZ(res.zero);
 	}
 
 	private ina() {
-
+		let res = this.a.add(1);
+		this.sr.setN(res.negative);
+		this.sr.setZ(res.zero);
 	}
 
 	private inb() {
-
+		let res = this.b.add(1);
+		this.sr.setN(res.negative);
+		this.sr.setZ(res.zero);
 	}
 
 	private ini() {
-
+		let res = this.i.add(1);
+		this.sr.setN(res.negative);
+		this.sr.setZ(res.zero);
 	}
 
 	private inj() {
-
+		let res = this.j.add(1);
+		this.sr.setN(res.negative);
+		this.sr.setZ(res.zero);
 	}
 
 	private jcc() {
-
+		if (!this.sr.getC())
+			switch (this.addressing) {
+				case "absolute":
+					this.pc.set(this.argument);
+					break;
+				case "relative":
+					this.pc.add(this.argument);
+					break;
+				case "relativeUsingJ":
+					this.pc.add(this.j.get());
+					break;
+			}
 	}
 
 	private jcs() {
-
+		if (this.sr.getC())
+			switch (this.addressing) {
+				case "absolute":
+					this.pc.set(this.argument);
+					break;
+				case "relative":
+					this.pc.add(this.argument);
+					break;
+				case "relativeUsingJ":
+					this.pc.add(this.j.get());
+					break;
+			}
 	}
 
 	private jeq() {
-
+		if (this.sr.getZ())
+			switch (this.addressing) {
+				case "absolute":
+					this.pc.set(this.argument);
+					break;
+				case "relative":
+					this.pc.add(this.argument);
+					break;
+				case "relativeUsingJ":
+					this.pc.add(this.j.get());
+					break;
+			}
 	}
 
 	private jmp() {
 
+		switch (this.addressing) {
+			case "absolute":
+				this.pc.set(this.argument);
+				break;
+			case "relative":
+				this.pc.add(this.argument);
+				break;
+			case "relativeUsingJ":
+				this.pc.add(this.j.get());
+				break;
+		}
 	}
 
 	private jnc() {
-
+		if (!this.sr.getN())
+			switch (this.addressing) {
+				case "absolute":
+					this.pc.set(this.argument);
+					break;
+				case "relative":
+					this.pc.add(this.argument);
+					break;
+				case "relativeUsingJ":
+					this.pc.add(this.j.get());
+					break;
+			}
 	}
 
 	private jne() {
-
+		if (!this.sr.getZ())
+			switch (this.addressing) {
+				case "absolute":
+					this.pc.set(this.argument);
+					break;
+				case "relative":
+					this.pc.add(this.argument);
+					break;
+				case "relativeUsingJ":
+					this.pc.add(this.j.get());
+					break;
+			}
 	}
 
 	private jns() {
-
+		if (this.sr.getN())
+			switch (this.addressing) {
+				case "absolute":
+					this.pc.set(this.argument);
+					break;
+				case "relative":
+					this.pc.add(this.argument);
+					break;
+				case "relativeUsingJ":
+					this.pc.add(this.j.get());
+					break;
+			}
 	}
 
 	private joc() {
-
+		if (!this.sr.getO())
+			switch (this.addressing) {
+				case "absolute":
+					this.pc.set(this.argument);
+					break;
+				case "relative":
+					this.pc.add(this.argument);
+					break;
+				case "relativeUsingJ":
+					this.pc.add(this.j.get());
+					break;
+			}
 	}
 
 	private jos() {
-
+		if (this.sr.getO())
+			switch (this.addressing) {
+				case "absolute":
+					this.pc.set(this.argument);
+					break;
+				case "relative":
+					this.pc.add(this.argument);
+					break;
+				case "relativeUsingJ":
+					this.pc.add(this.j.get());
+					break;
+			}
 	}
 
 	private kill() {
-
+		if (!this.sr.getS())
+		throw "Execution halted";
 	}
 
 	private lda() {
-
+		
 	}
 
 	private ldah() {
