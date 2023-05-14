@@ -415,21 +415,21 @@ export class ANC16 {
 	}
 
 	private cmpa() {
-		let res = add8bits(this.a.get(), -this.getOperand());
+		let res = add16bits(this.a.get(), -this.getOperand());
 		this.sr.setC(res.carry);
 		this.sr.setN(res.negative);
 		this.sr.setZ(res.zero);
 	}
 
 	private cmpb() {
-		let res = add8bits(this.b.get(), -this.getOperand());
+		let res = add16bits(this.b.get(), -this.getOperand());
 		this.sr.setC(res.carry);
 		this.sr.setN(res.negative);
 		this.sr.setZ(res.zero);
 	}
 
 	private cmpi() {
-		let res = add8bits(this.i.get(), -this.getOperand());
+		let res = add16bits(this.i.get(), -this.getOperand());
 		this.sr.setC(res.carry);
 		this.sr.setN(res.negative);
 		this.sr.setZ(res.zero);
@@ -1199,5 +1199,13 @@ export class ANC16 {
 		}
 
 		return cpuStatus;
+	}
+
+	getCurrentAddress() {
+		return this.pc.get();
+	}
+
+	getFullMemory() {
+		return this.iMem;
 	}
 }

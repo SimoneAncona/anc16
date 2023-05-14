@@ -6,6 +6,8 @@ import { CPUStatus } from "./types.js";
 
 colors.enable();
 
+let cmdHistory: string[] = [];
+
 const COMMANDS = [
 	"b",
 	"breakpoint",
@@ -32,7 +34,6 @@ const COMMANDS = [
 	"res",
 	"restart",
 	"run",
-	"stop",
 	"red key",
 	"redirect keyboard",
 	"emem dump",
@@ -83,7 +84,6 @@ ${"Execution flow".green}
 	${"res".cyan}			Restart the CPU
 	${"restart".cyan}			Restart the CPU
 	${"run".cyan}			Continue the execution of the emulator
-	${"stop".cyan}			Stop the execution
 
 ${"Interrupts".green}
 	${"red key".cyan}			Redirect keyboard input from the terminal to the emulator
@@ -122,6 +122,7 @@ To start type ${"run".cyan}
 
 	for (let i = 0; i < process.stdout.columns; i++) process.stdout.write("─");
 	let str = "";
+	let cursor: number;
 	process.stdin.setRawMode(true);
 	process.stdin.on("keypress", (chr, key: readline.Key) => {
 		// if (key.name === "tab") {
@@ -129,6 +130,9 @@ To start type ${"run".cyan}
 		// 	return;
 		// }
 		if (key.name === "enter" || key.name === "return") {
+			if (cmdHistory[cmdHistory.length - 1] !== str)
+				cmdHistory.push(str);
+			cursor = cmdHistory.length - 1;
 			str = "";
 			return;
 		}
@@ -136,6 +140,16 @@ To start type ${"run".cyan}
 			str = str.substring(0, str.length - 1);
 			return;
 		}
+		// if (key.name === "up") {
+		// 	let value = cmdHistory[cursor];
+		// 	if (value !== undefined) {
+		// 		str = value;
+		// 		process.stdout.write(value);
+		// 		process.stdout.clearLine(1);
+		// 		process.stdout.cursorTo(0);
+		// 		cursor--;
+		// 	}
+		// }
 		str += chr;
 		showHints(str);
 	});
@@ -275,7 +289,7 @@ function writeRegister(cpuStatus: CPUStatus, width: number, compressed: boolean)
 		process.stdout.write(" ");
 	process.stdout.write(" IR ".bgWhite.black + " : ");
 	process.stdout.write(cpuStatus.ir);
-	process.stdout.write(" (" + cpuStatus.currentInstruction + ")  ");
+	if (cpuStatus.currentInstruction !== undefined) process.stdout.write(" (" + cpuStatus.currentInstruction + ")  ");
 
 	process.stdout.cursorTo(2, compressed ? 6 : 9);
 	process.stdout.write(" SP ".bgBlue + " : ");
