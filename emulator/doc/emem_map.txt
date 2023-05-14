@@ -1,13 +1,11 @@
 This is the external memory mapping for this emulator:
   from <included> to <included> <size B> <info>
 - from 0x0000     to 0x3FFF     16'384   OS and swap memory
-- from 0x4000     to 0xFFF7     49'144   Card slot (external file system)
-- from 0xFFF8     to 0xFFFC     5        Video card
-    -  0xFFF8                   1        X coordinate
-    -  0xFFF9                   1        Y coordinate
-    -  0xFFFA                   1        Data (Color or Texture ID ...)
+- from 0x4000     to 0xFFFB     49'146   Card slot (external file system)
+- from 0xFFFA     to 0xFFFC     3        Video card
+    -  0xFFFA                   1        Data BUS (Color or Texture ID ...)
     -  0xFFFB                   1        Mode (Write)
-    -  0xFFFC                   1        Single Pixel (Read)
+    -  0xFFFC                   1        Single Pixel Mode (Read)
 -      0xFFFD                   1        Keyboard
 -      0xFFFE                   1        Mouse
 -      0xFFFF                   1        Audio

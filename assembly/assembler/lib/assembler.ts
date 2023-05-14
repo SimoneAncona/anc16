@@ -2387,7 +2387,7 @@ function setAddressFromSymbol(accessFrom: string[], symbol: string, labels: Labe
 					}
 				} else {
 					// @ts-ignore
-					data.value = (label.address as number - (fromAddress - 1));
+					data.value = (label.address as number - (fromAddress + 1));
 					data.size = 1;
 					// @ts-ignore
 					if (!fits8bit(data.value as number * 2)) {
@@ -2446,7 +2446,7 @@ function setAddressFromSymbol(accessFrom: string[], symbol: string, labels: Labe
 							}
 						} else {
 							// @ts-ignore
-							data.value = (sublb.address as number - (fromAddress - 1));
+							data.value = (sublb.address as number - (fromAddress + 1));
 							data.size = 1;
 							// @ts-ignore
 							if (!fits8bit(data.value as number * 2)) {

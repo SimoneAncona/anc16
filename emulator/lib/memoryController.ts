@@ -6,11 +6,14 @@ import { AVC64 } from "./AVC64.js";
 const MEMORY_SIZE = 0x10000;
 
 const EMEM_OS_START = 0;
-const EMEM_OS_SIZE = 16384;
+const EMEM_OS_SIZE = 16_384;
 const EMEM_CARD_SLOT_START = 0x4000;
-const EMEM_CARD_SLOT_SIZE = 49145;
-const EMEM_VIDEO_CHIP_START = 0xFFF9;
+const EMEM_CARD_SLOT_SIZE = 49_146;
+const EMEM_VIDEO_CHIP_START = 0xFFFA;
 const EMEM_VIDEO_CHIP_SIZE = 4;
+const EMEM_VIDEO_DATA = 0xFFFA;
+const EMEM_VIDEO_MODE = 0xFFFB;
+const EMEM_SP_READ = 0xFFFC;
 const EMEM_KEYBOARD = 0xFFFD;
 const EMEM_MOUSE = 0xFFFE;
 const EMEM_AUDIO = 0xFFFF;
@@ -18,6 +21,7 @@ const EMEM_AUDIO = 0xFFFF;
 export class ExternalMemoryController {
 	private memory: Uint8Array;
 	private gpu: AVC64;
+	private lastGPUmode: number;
 
 	constructor() {
 		this.memory = new Uint8Array(MEMORY_SIZE);
@@ -62,7 +66,14 @@ export class ExternalMemoryController {
 		
 	}
 
-	setMemory(data: number, address: number) {
+	getMemory(address: number) {
+		return this.memory[address];
+	}
 
+	setMemory(data: number, address: number) {
+		this.memory[address] = data;
+		if (address === EMEM_VIDEO_DATA) {
+			this.gpu.write(data, this.lastGPUmode);
+		}
 	}
 }

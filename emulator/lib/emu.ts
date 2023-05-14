@@ -9,7 +9,6 @@ export class Emulator {
 	private memoryController: ExternalMemoryController;
 	private cpu: ANC16;
 	private gpu: AVC64;
-	private runStatus: boolean;
 
 	constructor(params: EmulatorParams) {
 		this.memoryController = new ExternalMemoryController();
@@ -28,11 +27,6 @@ export class Emulator {
 			this.memoryController.setCard(params.emuOptions.cardFile);
 		}
 
-		process.stdout.on("resize", () => {
-			if (this.runStatus) {
-				debugCPUStats(this.cpu.getCpuStatus());
-			}
-		});
 
 		if (params.emuOptions.mode === "debug") {
 			initDebug();
@@ -61,7 +55,6 @@ export class Emulator {
 				this.cpu.reset();
 				break;
 			case "run":
-				this.runStatus = true;
 				debugCPUStats(this.cpu.getCpuStatus());
 				while (true) {
 					this.cpu.nextInstruction();
@@ -72,21 +65,17 @@ export class Emulator {
 				debugCPUStats(this.cpu.getCpuStatus());
 				break;
 			case "nj": case "next jump":
-				this.runStatus = true;
 				debugCPUStats(this.cpu.getCpuStatus());
-				while (!jumps.includes(this.cpu.getCurrentInstruction())) {
+				do {
 					this.cpu.nextInstruction();
 					updateDebugCPUStats(this.cpu.getCpuStatus());
-				}
-				this.runStatus = false;
+				} while (!jumps.includes(this.cpu.getCurrentInstruction()))
 				break;
 			case "nr": case "next return":
-				this.runStatus = true;
 				debugCPUStats(this.cpu.getCpuStatus());
-				while (this.cpu.getCurrentInstruction() !== "ret") {
+				do {
 					this.cpu.nextInstruction();
-				}
-				this.runStatus = false;
+				} while (this.cpu.getCurrentInstruction() !== "ret")
 				break;
 			default:
 				printError("unrecognized command. Type 'help' for more information");

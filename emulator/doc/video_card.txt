@@ -3,22 +3,33 @@ The AVC64 Video Card can handle a 224 * 256 px display with 256 colors.
 This card has 2 drawing modes:
 - single pixel  (0x00)
 - texture       (0x01)
+
+The registers are:
+X: 8 bit used to store X coordinate
+Y: 8 bit used to store Y coordinate
+D1: 8 bit used to store data such as colors or texture id
+
+
 The bus are
-8 x coordinates bus  
-    - used in single pixel mode for passing coordinates
-8 y coordinates bus
-    - used in single pixel mode for passing coordinates
+
 8 bit data bus      
     - in single pixel mode is used for passing the color
-    - in texture mode is used to pass the texture ID
+    - in clear mode is used to pass the color
+    
 1 bit mode bus
     - 0 R (read) used to read a color of a certain pixel in single pixel mode
     - 1 W (write)
-2 bit operation bus
-    - SP (0x00) Single Pixel (R to read a color of a pixel, W to write a pixel)
-    - TX (0x01) TeXture (mode bus must be W)
-    - CL (0x02) CLear the screen with the color specified in data bus (mode bus must be W)
-    - NOP (0x03) No Operations
+4 bit operation bus
+    - SP (0x00) Single Pixel (R to read a color of a pixel, W to write a pixel, coordinates are stored in X and Y, color is in D1)
+    - TX (0x01) TeXture (mode bus must be W, the texture ID high is stored in D1 and low in D2. For 2 colors mode only, FG color is stored in D3 and BG color in D4, coordinates are stored in X and Y)
+    - CL (0x02) CLear the screen with the color specified in D1 register (mode bus must be W)
+    - CX (0x03) Used to write or read the X coordinate register
+    - CY (0x04) Used to write or read the Y coordinate register
+    - D1 (0x05) Used to write or read the D1 register
+    - D2 (0x06) Used to write or read the D2 register
+    - D3 (0x07) Used to write or read the D3 register
+    - D4 (0x08) Used to write or read the D4 register
+    - NOP (0x09) No Operations
 
 Video card internal mapping:
   from <included> to <included> <size B> <info>

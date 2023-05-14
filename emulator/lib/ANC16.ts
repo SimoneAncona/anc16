@@ -7,7 +7,7 @@ import { AddressingMode, CPUStatus, Instruction } from "./types.js";
 const MEMORY_SIZE = 0x10000;
 const FIRMWARE = new Uint8ClampedArray([
 	0x80, 0x55, 0x01, 0x00, 0x80, 0x53, 0x00, 0x00, 0x00, 0x3e, 0x80, 0x72, 0x00,
-	0x00, 0x00, 0x04, 0x00, 0x06, 0x80, 0x26, 0x20, 0x13, 0x40, 0x12, 0xf1, 0x80,
+	0x00, 0x00, 0x04, 0x00, 0x06, 0x80, 0x26, 0x20, 0x13, 0x40, 0x12, 0xef, 0x80,
 	0x53, 0x00, 0x00, 0x80, 0x54, 0x00, 0x00, 0x80, 0x55, 0x00, 0x00, 0x40, 0x1c,
 	0x00, 0x80, 0x58, 0x00, 0x00, 0x80, 0x32, 0x20, 0x00, 0x41, 0x4e, 0x43,
 ]);
@@ -61,7 +61,10 @@ export class ANC16 {
 	private argsize: 8 | 16;
 	private privileged: boolean;
 
+	private externalBUS: ExternalMemoryController;
+
 	constructor(externalMemory: ExternalMemoryController) {
+		this.externalBUS = externalMemory;
 		if (externalMemory.getFullMemory().length != MEMORY_SIZE) throw "Memory must be 64KB";
 		this.a = new Register16HighLow();
 		this.b = new Register16HighLow();
@@ -99,7 +102,7 @@ export class ANC16 {
 		this.i.set(0); this.j.set(0);
 
 		// Special registers
-		this.ir.set(0); this.sp.set(0);
+		this.ir.set(this.iMem[INTERNAL_ROM_START] << 8 | this.iMem[INTERNAL_ROM_START + 1]); this.sp.set(0);
 		this.dr.set(0); this.sr.set(0b00111100);	// n o I D S 1 z c
 
 		// Memory table
@@ -267,9 +270,18 @@ export class ANC16 {
 	}
 
 	private iaOORGuard(address: number) {
-		if (!this.sr.get()) return false;
+		if (this.sr.getS()) return false;
 		if (address < this.imli.get() || address >= this.imhi.get()) {
 			this.iaOutOfRange();
+			return true;
+		}
+		return false;
+	}
+
+	private eaOORguard(address: number) {
+		if (this.sr.getS()) return false;
+		if (address < this.emli.get() || address >= this.emhi.get()) {
+			this.eaOutOfRange();
 			return true;
 		}
 		return false;
@@ -811,7 +823,36 @@ export class ANC16 {
 	}
 
 	private read() {
-
+		let value;
+		let address;
+		switch (this.addressing) {
+			case "accumulatorRegister":
+				address = this.a.get();
+				if (this.eaOORguard(address)) return;
+				value = this.externalBUS.getMemory(this.a.get())
+				this.b.setHigh(value);
+				break;
+			case "baseRegister":
+				address = this.b.get();
+				if (this.eaOORguard(address)) return;
+				value = this.externalBUS.getMemory(this.a.get())
+				this.a.setHigh(value);
+				break;
+			case "absolute": case "zeroPage":
+				address = this.argument;
+				if (this.eaOORguard(address)) return;
+				value = this.externalBUS.getMemory(this.a.get())
+				this.a.setHigh(value);
+				break;
+			case "absoluteIndexed": case "zeroPageIndexed":
+				address = add16bits(this.argument, this.i.get()).result;
+				if (this.eaOORguard(address)) return;
+				value = this.externalBUS.getMemory(this.a.get())
+				this.a.setHigh(value);
+				break;
+		}
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 8));
 	}
 
 	private rest() {
@@ -972,79 +1013,156 @@ export class ANC16 {
 	}
 
 	private tab() {
-
+		let value = this.a.get();
+		this.b.set(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 16));
 	}
 
 	private tabh() {
-
+		let value = this.a.getHigh();
+		this.b.setHigh(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 8));
 	}
 
 	private tabl() {
-
+		let value = this.a.getLow();
+		this.b.setLow(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 8));
 	}
 
 	private tadr() {
-
+		if (this.sysPrivilegesGuard()) return;
+		let value = this.a.get();
+		this.dr.set(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 16));
 	}
 
 	private taemh() {
-
+		if (this.sysPrivilegesGuard()) return;
+		let value = this.a.get();
+		this.emhi.set(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 16));
 	}
 
 	private taeml() {
-
+		if (this.sysPrivilegesGuard()) return;
+		let value = this.a.get();
+		this.emli.set(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 16));
 	}
 
 	private tahj() {
-
+		let value = this.a.getHigh();
+		this.j.set(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 8));
 	}
 
 	private tai() {
-
+		let value = this.a.get();
+		this.i.set(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 16));
 	}
 
 	private taimh() {
-
+		if (this.sysPrivilegesGuard()) return;
+		let value = this.a.get();
+		this.imhi.set(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 16));
 	}
 
 	private taiml() {
-
+		if (this.sysPrivilegesGuard()) return;
+		let value = this.a.get();
+		this.imli.set(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 16));
 	}
 
 	private tba() {
-
+		let value = this.b.get();
+		this.a.set(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 16));
 	}
 
 	private tbah() {
-
+		let value = this.b.getHigh();
+		this.a.setHigh(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 8));
 	}
 
 	private tbal() {
-
+		let value = this.b.getLow();
+		this.a.setLow(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 8));
 	}
 
 	private tbhj() {
-
+		let value = this.b.getHigh();
+		this.j.set(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 8));
 	}
 
 	private tbi() {
-
+		let value = this.b.get();
+		this.i.set(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 16));
 	}
 
 	private tisp() {
-
+		let value = this.i.get();
+		this.sp.set(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 16));
 	}
 
 	private tspb() {
-
+		let value = this.sp.get();
+		this.b.set(value);
+		this.sr.setZ(value === 0);
+		this.sr.setN(msbit(value, 16));
 	}
 
 	private wrte() {
-
+		let address = this.getAddress();
+		if (this.eaOORguard(address)) return;
+		this.externalBUS.setMemory(this.a.getHigh(), address);
 	}
 
 	private wrti() {
-
+		if (this.eaOORguard(this.i.get())) return;
+		let value;
+		switch (this.addressing) {
+			case "accumulatorHighRegister":
+				value = this.a.getHigh();
+				break;
+			case "baseHighRegister":
+				value = this.b.getHigh();
+				break;
+			case "immediate1": case "immediate":
+				value = this.argument;
+				break;
+			case "zeroPage": case "absolute":
+				value = this.iMem[this.argument];
+				break;
+			case "indirect":
+				value = this.iMem[this.iMem[this.argument] << 8 | this.iMem[add16bits(this.argument, 1).result]];
+				break;
+		}
+		this.externalBUS.setMemory(value, this.i.get());
 	}
 
 	private xora() {

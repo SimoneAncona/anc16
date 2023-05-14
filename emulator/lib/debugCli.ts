@@ -275,7 +275,7 @@ function writeRegister(cpuStatus: CPUStatus, width: number, compressed: boolean)
 		process.stdout.write(" ");
 	process.stdout.write(" IR ".bgWhite.black + " : ");
 	process.stdout.write(cpuStatus.ir);
-	process.stdout.write(" (" + cpuStatus.currentInstruction + ")");
+	process.stdout.write(" (" + cpuStatus.currentInstruction + ")  ");
 
 	process.stdout.cursorTo(2, compressed ? 6 : 9);
 	process.stdout.write(" SP ".bgBlue + " : ");
