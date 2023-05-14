@@ -5,9 +5,9 @@ function add(n1: number, n2: number, bits: 8 | 16) {
 	ar[0] = n1;
 	ar[1] = n2;
 	ar[2] = ar[0] + ar[1];
-	let msb1 = msbit(ar[0], bits); 
+	let msb1 = msbit(ar[0], bits);
 	let msb2 = msbit(ar[1], bits);
-	let msbr = msbit(ar[2], bits); 
+	let msbr = msbit(ar[2], bits);
 	return {
 		result: ar[2],
 		overflow: msb1 === msb2 ? msbr !== msb1 : false,
@@ -88,7 +88,7 @@ export class Register8 {
 	toHexString() {
 		return this.value[0].toString(16).padStart(2, '0').toUpperCase();
 	}
-	
+
 	add(operand: number) {
 		let op = add8bits(this.get(), operand);
 		this.set(op.result);
@@ -156,6 +156,22 @@ export class Register16 {
 		this.set(op.result);
 		return op;
 	}
+
+	shl() {
+		let n = this.get();
+		let carry = msbit(n, 16);
+		n = n << 1;
+		this.set(n);
+		return { carry: carry, zero: n === 0 };
+	}
+
+	shr() {
+		let n = this.get();
+		let carry = Boolean(n & 1)
+		n = n >> 1;
+		this.set(n);
+		return { carry: carry, zero: n === 0 };
+	}
 }
 
 export class Register16HighLow {
@@ -178,7 +194,7 @@ export class Register16HighLow {
 	}
 
 	getLow() {
-		return this.value[0] & 0x00FF; 
+		return this.value[0] & 0x00FF;
 	}
 
 	setHigh(value: number) {
@@ -254,6 +270,22 @@ export class Register16HighLow {
 		let op = or(this.getLow(), operand, 8);
 		this.setLow(op.result);
 		return op;
+	}
+
+	shl() {
+		let n = this.get();
+		let carry = msbit(n, 16);
+		n = n << 1;
+		this.set(n);
+		return { carry: carry, zero: n === 0 };
+	}
+
+	shr() {
+		let n = this.get();
+		let carry = Boolean(n & 1)
+		n = n >> 1;
+		this.set(n);
+		return { carry: carry, zero: n === 0 };
 	}
 }
 

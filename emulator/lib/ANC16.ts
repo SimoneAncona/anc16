@@ -191,24 +191,50 @@ export class ANC16 {
 	}
 
 	// interrupts
-	eirq(address: number, data: number) {
+	private pushIrq() {
+		this.iMem[PC_STACK_VECTOR] = getHigh(this.pc.get());
+		this.iMem[PC_STACK_VECTOR + 1] = getLow(this.pc.get());
+		this.iMem[SR_STACK_VECTOR] = this.sr.get();
+		this.iMem[A_STACK_VECTOR] = this.a.getHigh();
+		this.iMem[A_STACK_VECTOR + 1] = this.a.getLow();
+		this.iMem[B_STACK_VECTOR] = this.b.getHigh();
+		this.iMem[B_STACK_VECTOR + 1] = this.b.getLow();
+	}
 
+	eirq(address: number, data: number) {
+		if (this.sr.getI()) {
+			this.pushIrq();
+			this.b.set(address);
+			this.a.setHigh(data);
+			this.pc.set(this.iMem[EIRQ_VECTOR] << 8 | this.iMem[EIRQ_VECTOR + 1]);
+		}
 	}
 
 	private nmi(al: number) {
-
+		this.pushIrq();
+		this.a.setLow(al);
+		this.pc.set(this.iMem[NMI_VECTOR] << 8 | this.iMem[NMI_VECTOR + 1]);
 	}
 
 	private spOutOfRange() {
-
+		if (this.sr.getI()) {
+			this.pushIrq();
+			this.pc.set(this.iMem[SPOOR_VECTOR] << 8 | this.iMem[SPOOR_VECTOR + 1]);
+		}
 	}
 
 	private iaOutOfRange() {
-
+		if (this.sr.getI()) {
+			this.pushIrq();
+			this.pc.set(this.iMem[IAOOR_VECTOR] << 8 | this.iMem[IAOOR_VECTOR + 1]);
+		}
 	}
 
 	private eaOutOfRange() {
-		
+		if (this.sr.getI()) {
+			this.pushIrq();
+			this.pc.set(this.iMem[EAOOR_VECTOR] << 8 | this.iMem[EAOOR_VECTOR + 1]);
+		}
 	}
 
 	private sysPrivilegesGuard() {
@@ -225,6 +251,41 @@ export class ANC16 {
 			return true;
 		}
 		return false;
+	}
+
+	// memory
+	private store(address: number, value: number, size: 8 | 16) {
+		if (this.iaOORGuard(address)) {
+			return;
+		}
+		if (size === 8) {
+			this.iMem[address] = value;
+			return;
+		}
+		this.iMem[address] = getHigh(value);
+		this.iMem[add16bits(address, 1).result] = getLow(value);
+	}
+
+	private iaOORGuard(address: number) {
+		if (!this.sr.get()) return false;
+		if (address < this.imli.get() || address >= this.imhi.get()) {
+			this.iaOutOfRange();
+			return true;
+		}
+		return false;
+	}
+
+	private getAddress() {
+		switch (this.addressing) {
+			case "absolute": case "zeroPage":
+				return this.argument;
+			case "absoluteIndexed": case "zeroPageIndexed":
+				return add16bits(this.argument, this.i.get()).result;
+			case "indirect":
+				return this.iMem[this.argument] << 8 | this.iMem[add16bits(this.argument, 1).result];
+			case "indirectIndexed":
+				return add16bits(this.iMem[this.argument] << 8 | this.iMem[add16bits(this.argument, 1).result], 1).result;
+		}
 	}
 
 	// instructions
@@ -777,75 +838,137 @@ export class ANC16 {
 	}
 
 	private semh() {
-		
+		this.store(this.getAddress(), this.emhi.get(), 16);
 	}
 
 	private seml() {
-
+		this.store(this.getAddress(), this.emli.get(), 16);
 	}
 
 	private ses() {
-
+		if (this.sysPrivilegesGuard()) return;
+		this.sr.setS(true);
 	}
 
 	private shl() {
-
+		let res;
+		switch (this.addressing) {
+			case "accumulatorRegister":
+				res = this.a.shl();
+				break;
+			case "baseRegister":
+				res = this.b.shl();
+				break;
+			case "indexRegister":
+				res = this.i.shl();
+				break;
+		}
+		this.sr.setC(res.carry);
+		this.sr.setZ(res.zero);
+		return;
 	}
 
 	private shr() {
-
+		let res;
+		switch (this.addressing) {
+			case "accumulatorRegister":
+				res = this.a.shr();
+				break;
+			case "baseRegister":
+				res = this.b.shr();
+				break;
+			case "indexRegister":
+				res = this.i.shr();
+				break;
+		}
+		this.sr.setC(res.carry);
+		this.sr.setZ(res.zero);
+		return;
 	}
 
 	private simh() {
-
+		this.store(this.getAddress(), this.imhi.get(), 16);
 	}
 
 	private siml() {
-
+		this.store(this.getAddress(), this.imli.get(), 16);
 	}
 
 	private sta() {
-
+		this.store(this.getAddress(), this.a.get(), 16);
 	}
 
 	private stah() {
-
+		this.store(this.getAddress(), this.a.getHigh(), 8);
 	}
 
 	private stb() {
-
+		this.store(this.getAddress(), this.b.get(), 16);
 	}
 
 	private stbh() {
-
+		this.store(this.getAddress(), this.b.getHigh(), 8);
 	}
 
 	private sti() {
-
+		this.store(this.getAddress(), this.i.get(), 16);
 	}
 
 	private stj() {
-
+		this.store(this.getAddress(), this.j.get(), 8);
 	}
 
 	private stpc() {
-
+		this.store(this.getAddress(), this.pc.get(), 16);
 	}
 
 	private stsr() {
-
+		this.store(this.getAddress(), this.sr.get(), 8);
 	}
 
 	private sua() {
-
+		let res;
+		switch (this.addressing) {
+			case "immediate1":
+				res = this.a.subLow(this.getOperand());
+				this.sr.setO(res.overflow);
+				this.sr.setC(res.carry);
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+			default:
+				res = this.a.sub(this.getOperand());
+				this.sr.setO(res.overflow);
+				this.sr.setC(res.carry);
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+		}
 	}
 
 	private sub() {
-
+		let res;
+		switch (this.addressing) {
+			case "immediate1":
+				res = this.b.subLow(this.getOperand());
+				this.sr.setO(res.overflow);
+				this.sr.setC(res.carry);
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+			default:
+				res = this.b.sub(this.getOperand());
+				this.sr.setO(res.overflow);
+				this.sr.setC(res.carry);
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+		}
 	}
 
 	private sys() {
-
+		this.pushIrq();
+		this.pc.set(this.iMem[SYS_VECTOR] << 8 | this.iMem[SYS_VECTOR + 1]);
 	}
 
 	private tab() {
