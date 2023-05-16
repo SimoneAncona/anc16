@@ -260,6 +260,12 @@ export class Register16HighLow {
 		return op;
 	}
 
+	xor(operand: number) {
+		let op = xor(this.get(), operand, 16);
+		this.set(op.result);
+		return op;
+	}
+
 	andLow(operand: number) {
 		let op = and(this.getLow(), operand, 8);
 		this.setLow(op.result);
@@ -268,6 +274,12 @@ export class Register16HighLow {
 
 	orLow(operand: number) {
 		let op = or(this.getLow(), operand, 8);
+		this.setLow(op.result);
+		return op;
+	}
+
+	xorLow(operand: number) {
+		let op = xor(this.getLow(), operand, 8);
 		this.setLow(op.result);
 		return op;
 	}

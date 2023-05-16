@@ -1167,11 +1167,35 @@ export class ANC16 {
 	}
 
 	private xora() {
-
+		let res;
+		switch (this.addressing) {
+			case "immediate1":
+				res = this.a.xorLow(this.getOperand());
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+			default:
+				res = this.a.xor(this.getOperand());
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+		}
 	}
 
 	private xorb() {
-
+		let res;
+		switch (this.addressing) {
+			case "immediate1":
+				res = this.b.xorLow(this.getOperand());
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+			default:
+				res = this.b.xor(this.getOperand());
+				this.sr.setZ(res.zero);
+				this.sr.setN(res.negative);
+				break;
+		}
 	}
 
 	// For debug mode
