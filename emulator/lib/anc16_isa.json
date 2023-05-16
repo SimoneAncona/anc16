@@ -1,7 +1,7 @@
 [
 	{
 		"mnemonic": "ADA",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0014",
@@ -52,7 +52,7 @@
 	},
 	{
 		"mnemonic": "ADB",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0015",
@@ -103,7 +103,7 @@
 	},
 	{
 		"mnemonic": "ANA",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0016",
@@ -159,7 +159,7 @@
 	},
 	{
 		"mnemonic": "ANB",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0017",
@@ -215,7 +215,7 @@
 	},
 	{
 		"mnemonic": "ARET",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0002",
@@ -226,7 +226,7 @@
 	},
 	{
 		"mnemonic": "CLC",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0010",
@@ -237,7 +237,7 @@
 	},
 	{
 		"mnemonic": "CLD",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x0012",
@@ -248,7 +248,7 @@
 	},
 	{
 		"mnemonic": "CLI",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x0013",
@@ -259,7 +259,7 @@
 	},
 	{
 		"mnemonic": "CLO",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0011",
@@ -270,7 +270,7 @@
 	},
 	{
 		"mnemonic": "CLS",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x0061",
@@ -281,7 +281,7 @@
 	},
 	{
 		"mnemonic": "CMAH",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x001A",
@@ -327,7 +327,7 @@
 	},
 	{
 		"mnemonic": "CMBH",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x001B",
@@ -373,7 +373,7 @@
 	},
 	{
 		"mnemonic": "CMPA",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x001C",
@@ -424,7 +424,7 @@
 	},
 	{
 		"mnemonic": "CMPB",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x001D",
@@ -475,7 +475,7 @@
 	},
 	{
 		"mnemonic": "CMPI",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0020",
@@ -506,7 +506,7 @@
 	},
 	{
 		"mnemonic": "CPUID",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0003",
@@ -517,7 +517,7 @@
 	},
 	{
 		"mnemonic": "DEA",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0008",
@@ -528,7 +528,7 @@
 	},
 	{
 		"mnemonic": "DEB",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0009",
@@ -539,7 +539,7 @@
 	},
 	{
 		"mnemonic": "DEI",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x000A",
@@ -550,7 +550,7 @@
 	},
 	{
 		"mnemonic": "DEJ",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x000B",
@@ -561,7 +561,7 @@
 	},
 	{
 		"mnemonic": "INA",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0004",
@@ -572,7 +572,7 @@
 	},
 	{
 		"mnemonic": "INB",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0005",
@@ -583,7 +583,7 @@
 	},
 	{
 		"mnemonic": "INI",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0006",
@@ -594,7 +594,7 @@
 	},
 	{
 		"mnemonic": "INJ",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0007",
@@ -605,7 +605,7 @@
 	},
 	{
 		"mnemonic": "JCC",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0021",
@@ -626,7 +626,7 @@
 	},
 	{
 		"mnemonic": "JCS",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0025",
@@ -647,7 +647,7 @@
 	},
 	{
 		"mnemonic": "JEQ",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0027",
@@ -668,7 +668,7 @@
 	},
 	{
 		"mnemonic": "JMP",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0056",
@@ -709,7 +709,7 @@
 	},
 	{
 		"mnemonic": "JNC",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0024",
@@ -730,7 +730,7 @@
 	},
 	{
 		"mnemonic": "JNE",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0023",
@@ -751,7 +751,7 @@
 	},
 	{
 		"mnemonic": "JNS",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0028",
@@ -772,7 +772,7 @@
 	},
 	{
 		"mnemonic": "JOC",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0022",
@@ -793,7 +793,7 @@
 	},
 	{
 		"mnemonic": "JOS",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0026",
@@ -814,7 +814,7 @@
 	},
 	{
 		"mnemonic": "KILL",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x0001",
@@ -835,7 +835,7 @@
 	},
 	{
 		"mnemonic": "LDA",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x8037",
@@ -866,7 +866,7 @@
 	},
 	{
 		"mnemonic": "LDAH",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x4018",
@@ -897,7 +897,7 @@
 	},
 	{
 		"mnemonic": "LDAL",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x4019",
@@ -928,7 +928,7 @@
 	},
 	{
 		"mnemonic": "LDB",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x8043",
@@ -959,7 +959,7 @@
 	},
 	{
 		"mnemonic": "LDBH",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x401A",
@@ -990,7 +990,7 @@
 	},
 	{
 		"mnemonic": "LDBL",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x401B",
@@ -1021,7 +1021,7 @@
 	},
 	{
 		"mnemonic": "LDDR",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x808A",
@@ -1042,7 +1042,7 @@
 	},
 	{
 		"mnemonic": "LDI",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x804F",
@@ -1063,7 +1063,7 @@
 	},
 	{
 		"mnemonic": "LDJ",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x401C",
@@ -1089,7 +1089,7 @@
 	},
 	{
 		"mnemonic": "LDSP",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x8056",
@@ -1110,7 +1110,7 @@
 	},
 	{
 		"mnemonic": "LDSR",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x4053",
@@ -1131,7 +1131,7 @@
 	},
 	{
 		"mnemonic": "LEMH",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x4054",
@@ -1162,7 +1162,7 @@
 	},
 	{
 		"mnemonic": "LEML",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x4056",
@@ -1193,7 +1193,7 @@
 	},
 	{
 		"mnemonic": "LIMH",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x404B",
@@ -1224,7 +1224,7 @@
 	},
 	{
 		"mnemonic": "LIML",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x404D",
@@ -1255,7 +1255,7 @@
 	},
 	{
 		"mnemonic": "MSB",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x000C",
@@ -1271,7 +1271,7 @@
 	},
 	{
 		"mnemonic": "NOP",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0000",
@@ -1349,7 +1349,7 @@
 				"argNBytes": 1
 			},
 			{
-				"opcode": "0x405D",
+				"opcode": "0x4061",
 				"addressingMode": "immediate",
 				"argNBytes": 1
 			},
@@ -1374,7 +1374,7 @@
 				"argNBytes": 2
 			},
 			{
-				"opcode": "0x80BF",
+				"opcode": "0x80C7",
 				"addressingMode": "absolute",
 				"argNBytes": 2
 			},
@@ -1387,7 +1387,7 @@
 	},
 	{
 		"mnemonic": "ORA",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0036",
@@ -1443,7 +1443,7 @@
 	},
 	{
 		"mnemonic": "ORB",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0037",
@@ -1499,7 +1499,7 @@
 	},
 	{
 		"mnemonic": "POP",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0065",
@@ -1525,7 +1525,7 @@
 	},
 	{
 		"mnemonic": "PSH",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x003A",
@@ -1586,7 +1586,7 @@
 	},
 	{
 		"mnemonic": "READ",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x003E",
@@ -1622,7 +1622,7 @@
 	},
 	{
 		"mnemonic": "REST",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x3FFE",
@@ -1633,7 +1633,7 @@
 	},
 	{
 		"mnemonic": "RET",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x80FF",
@@ -1644,7 +1644,7 @@
 	},
 	{
 		"mnemonic": "SED",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x000F",
@@ -1655,7 +1655,7 @@
 	},
 	{
 		"mnemonic": "SEI",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x000E",
@@ -1666,7 +1666,7 @@
 	},
 	{
 		"mnemonic": "SEMH",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x4058",
@@ -1702,7 +1702,7 @@
 	},
 	{
 		"mnemonic": "SEML",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x405A",
@@ -1738,7 +1738,7 @@
 	},
 	{
 		"mnemonic": "SES",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x0062",
@@ -1749,7 +1749,7 @@
 	},
 	{
 		"mnemonic": "SHL",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0040",
@@ -1770,7 +1770,7 @@
 	},
 	{
 		"mnemonic": "SHR",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0043",
@@ -1791,7 +1791,7 @@
 	},
 	{
 		"mnemonic": "SIMH",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x404F",
@@ -1827,7 +1827,7 @@
 	},
 	{
 		"mnemonic": "SIML",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x4051",
@@ -1863,7 +1863,7 @@
 	},
 	{
 		"mnemonic": "STA",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x4026",
@@ -1899,7 +1899,7 @@
 	},
 	{
 		"mnemonic": "STAH",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x4028",
@@ -1934,8 +1934,44 @@
 		]
 	},
 	{
+		"mnemonic": "STAL",
+		"needPrevileges": false,
+		"opcodes": [
+			{
+				"opcode": "0x405D",
+				"addressingMode": "zeroPage",
+				"argNBytes": 1
+			},
+			{
+				"opcode": "0x405E",
+				"addressingMode": "zeroPageIndexed",
+				"argNBytes": 1
+			},
+			{
+				"opcode": "0x80BF",
+				"addressingMode": "absolute",
+				"argNBytes": 2
+			},
+			{
+				"opcode": "0x80C0",
+				"addressingMode": "absoluteIndexed",
+				"argNBytes": 2
+			},
+			{
+				"opcode": "0x80C1",
+				"addressingMode": "indirect",
+				"argNBytes": 2
+			},
+			{
+				"opcode": "0x80C2",
+				"addressingMode": "indirectIndexed",
+				"argNBytes": 2
+			}
+		]
+	},
+	{
 		"mnemonic": "STB",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x402A",
@@ -1971,7 +2007,7 @@
 	},
 	{
 		"mnemonic": "STBH",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x402C",
@@ -2006,8 +2042,44 @@
 		]
 	},
 	{
+		"mnemonic": "STBL",
+		"needPrevileges": false,
+		"opcodes": [
+			{
+				"opcode": "0x405F",
+				"addressingMode": "zeroPage",
+				"argNBytes": 1
+			},
+			{
+				"opcode": "0x4060",
+				"addressingMode": "zeroPageIndexed",
+				"argNBytes": 1
+			},
+			{
+				"opcode": "0x80C3",
+				"addressingMode": "absolute",
+				"argNBytes": 2
+			},
+			{
+				"opcode": "0x80C4",
+				"addressingMode": "absoluteIndexed",
+				"argNBytes": 2
+			},
+			{
+				"opcode": "0x80C5",
+				"addressingMode": "indirect",
+				"argNBytes": 2
+			},
+			{
+				"opcode": "0x80C6",
+				"addressingMode": "indirectIndexed",
+				"argNBytes": 2
+			}
+		]
+	},
+	{
 		"mnemonic": "STI",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x402E",
@@ -2028,7 +2100,7 @@
 	},
 	{
 		"mnemonic": "STJ",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x402F",
@@ -2059,7 +2131,7 @@
 	},
 	{
 		"mnemonic": "STPC",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x80A7",
@@ -2070,7 +2142,7 @@
 	},
 	{
 		"mnemonic": "STSR",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x80A8",
@@ -2081,7 +2153,7 @@
 	},
 	{
 		"mnemonic": "SUA",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0046",
@@ -2137,7 +2209,7 @@
 	},
 	{
 		"mnemonic": "SUB",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0047",
@@ -2193,7 +2265,7 @@
 	},
 	{
 		"mnemonic": "SYS",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x3FFF",
@@ -2204,7 +2276,7 @@
 	},
 	{
 		"mnemonic": "TAB",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x004A",
@@ -2215,7 +2287,7 @@
 	},
 	{
 		"mnemonic": "TABH",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x002E",
@@ -2226,7 +2298,7 @@
 	},
 	{
 		"mnemonic": "TABL",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x005A",
@@ -2237,7 +2309,7 @@
 	},
 	{
 		"mnemonic": "TADR",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x005B",
@@ -2248,7 +2320,7 @@
 	},
 	{
 		"mnemonic": "TAEMH",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x005F",
@@ -2259,7 +2331,7 @@
 	},
 	{
 		"mnemonic": "TAEML",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x0060",
@@ -2270,7 +2342,7 @@
 	},
 	{
 		"mnemonic": "TAHJ",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0031",
@@ -2281,7 +2353,7 @@
 	},
 	{
 		"mnemonic": "TAI",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x004B",
@@ -2292,7 +2364,7 @@
 	},
 	{
 		"mnemonic": "TAIMH",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x005C",
@@ -2303,7 +2375,7 @@
 	},
 	{
 		"mnemonic": "TAIML",
-		"needPrivileges": true,
+		"needPrevileges": true,
 		"opcodes": [
 			{
 				"opcode": "0x005D",
@@ -2314,7 +2386,7 @@
 	},
 	{
 		"mnemonic": "TBA",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x004C",
@@ -2325,7 +2397,7 @@
 	},
 	{
 		"mnemonic": "TBAH",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x002D",
@@ -2336,7 +2408,7 @@
 	},
 	{
 		"mnemonic": "TBAL",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0059",
@@ -2347,7 +2419,7 @@
 	},
 	{
 		"mnemonic": "TBHJ",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0032",
@@ -2358,7 +2430,7 @@
 	},
 	{
 		"mnemonic": "TBI",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x004D",
@@ -2369,7 +2441,7 @@
 	},
 	{
 		"mnemonic": "TISP",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x004E",
@@ -2380,7 +2452,7 @@
 	},
 	{
 		"mnemonic": "TSPB",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x004F",
@@ -2391,7 +2463,7 @@
 	},
 	{
 		"mnemonic": "WRTE",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x8085",
@@ -2407,7 +2479,7 @@
 	},
 	{
 		"mnemonic": "WRTI",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0050",
@@ -2443,7 +2515,7 @@
 	},
 	{
 		"mnemonic": "XORA",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0052",
@@ -2499,7 +2571,7 @@
 	},
 	{
 		"mnemonic": "XORB",
-		"needPrivileges": false,
+		"needPrevileges": false,
 		"opcodes": [
 			{
 				"opcode": "0x0053",

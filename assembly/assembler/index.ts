@@ -27,7 +27,7 @@ const version =
 	`
 Assembly standard version: ${"2.0".green}
 ANC16 ISA version: ${"1.0".green}
-Assembler version: ${"1.0.8-pr".green}
+Assembler version: ${"1.0.9-pr".green}
 `
 
 if (process.argv.length < 3) {

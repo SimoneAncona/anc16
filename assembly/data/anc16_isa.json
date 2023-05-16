@@ -1349,7 +1349,7 @@
 				"argNBytes": 1
 			},
 			{
-				"opcode": "0x405D",
+				"opcode": "0x4061",
 				"addressingMode": "immediate",
 				"argNBytes": 1
 			},
@@ -1374,7 +1374,7 @@
 				"argNBytes": 2
 			},
 			{
-				"opcode": "0x80BF",
+				"opcode": "0x80C7",
 				"addressingMode": "absolute",
 				"argNBytes": 2
 			},
@@ -1934,6 +1934,42 @@
 		]
 	},
 	{
+		"mnemonic": "STAL",
+		"needPrevileges": false,
+		"opcodes": [
+			{
+				"opcode": "0x405D",
+				"addressingMode": "zeroPage",
+				"argNBytes": 1
+			},
+			{
+				"opcode": "0x405E",
+				"addressingMode": "zeroPageIndexed",
+				"argNBytes": 1
+			},
+			{
+				"opcode": "0x80BF",
+				"addressingMode": "absolute",
+				"argNBytes": 2
+			},
+			{
+				"opcode": "0x80C0",
+				"addressingMode": "absoluteIndexed",
+				"argNBytes": 2
+			},
+			{
+				"opcode": "0x80C1",
+				"addressingMode": "indirect",
+				"argNBytes": 2
+			},
+			{
+				"opcode": "0x80C2",
+				"addressingMode": "indirectIndexed",
+				"argNBytes": 2
+			}
+		]
+	},
+	{
 		"mnemonic": "STB",
 		"needPrevileges": false,
 		"opcodes": [
@@ -2000,6 +2036,42 @@
 			},
 			{
 				"opcode": "0x8074",
+				"addressingMode": "indirectIndexed",
+				"argNBytes": 2
+			}
+		]
+	},
+	{
+		"mnemonic": "STBL",
+		"needPrevileges": false,
+		"opcodes": [
+			{
+				"opcode": "0x405F",
+				"addressingMode": "zeroPage",
+				"argNBytes": 1
+			},
+			{
+				"opcode": "0x4060",
+				"addressingMode": "zeroPageIndexed",
+				"argNBytes": 1
+			},
+			{
+				"opcode": "0x80C3",
+				"addressingMode": "absolute",
+				"argNBytes": 2
+			},
+			{
+				"opcode": "0x80C4",
+				"addressingMode": "absoluteIndexed",
+				"argNBytes": 2
+			},
+			{
+				"opcode": "0x80C5",
+				"addressingMode": "indirect",
+				"argNBytes": 2
+			},
+			{
+				"opcode": "0x80C6",
 				"addressingMode": "indirectIndexed",
 				"argNBytes": 2
 			}

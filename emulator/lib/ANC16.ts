@@ -944,12 +944,20 @@ export class ANC16 {
 		this.store(this.getAddress(), this.a.getHigh(), 8);
 	}
 
+	private stal() {
+		this.store(this.getAddress(), this.a.getLow(), 8);
+	}
+
 	private stb() {
 		this.store(this.getAddress(), this.b.get(), 16);
 	}
 
 	private stbh() {
 		this.store(this.getAddress(), this.b.getHigh(), 8);
+	}
+
+	private stbl() {
+		this.store(this.getAddress(), this.b.getLow(), 8);
 	}
 
 	private sti() {
