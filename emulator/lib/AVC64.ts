@@ -40,6 +40,7 @@ export class AVC64 {
         this.x = new Register8();
         this.y = new Register8();
         this.mem = new Uint8Array(MEMORY_SIZE);
+        this.videoLoop();
     }
 
     convertXY() {
@@ -57,14 +58,12 @@ export class AVC64 {
         switch (mode) {
             case VIDEO_MODE_SP:
                 this.mem[this.convertXY()] = this.d1.get();
-                updateVideo(this.getVideoMemory());
                 break;
             case VIDEO_MODE_TX:
                 throw "Not implemented";
                 break;
             case VIDEO_MODE_CL:
                 for (let i = VIDEO_MEM; i < MEMORY_SIZE; i++) this.mem[i] = this.d1.get();
-                updateVideo(this.getVideoMemory());
                 break;
             case VIDEO_MODE_CX:
                 this.x.set(data);
@@ -89,5 +88,9 @@ export class AVC64 {
 
     getVideoMemory() {
         return this.mem.subarray(VIDEO_MEM, VIDEO_MEM + VIDEO_MEM_SIZE);
+    }
+
+    videoLoop() {
+        setInterval(() => updateVideo(this.getVideoMemory()), 5);
     }
 }

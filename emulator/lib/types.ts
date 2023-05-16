@@ -13,7 +13,9 @@ export type CPUStatus = {
 	imhi: string,
 	emli: string,
 	emhi: string,
-	ar: string
+	ar: string,
+
+	iMem: Uint8Array;
 }
 
 export type EmulatorOptions = {

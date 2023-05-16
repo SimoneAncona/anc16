@@ -1,11 +1,12 @@
 import { ANC16 } from "./ANC16.js";
 import { AVC64 } from "./AVC64.js";
 import { printError } from "./consoleError.js";
-import { debugAsk, debugCPUStats, getLineDebug, initDebug, printDebugHelp, updateDebugCPUStats } from "./debugCli.js";
+import { debugAsk, debugCPUStats, getLineDebug, initDebug, memHex, printDebugHelp, updateDebugCPUStats } from "./debugCli.js";
 import { ExternalMemoryController } from "./memoryController.js";
 import { Breakpoint, EmulatorParams } from "./types.js";
 
-const FAST_CONSOLE_CYCLE = 100;
+const FAST_CONSOLE_CYCLE = 180;
+const SLOW_CONSOLE_CYCLE = 50;
 
 export class Emulator {
 	private memoryController: ExternalMemoryController;
@@ -52,8 +53,8 @@ export class Emulator {
 
 	private async decodeDebugCommand(str: string) {
 		const jumps = ["jmp", "jeq", "jne", "jns", "jnc", "jos", "joc", "jcc", "jcs"];
-		let cnt = 0;
 		str = str.trim();
+		let cnt;
 		try {
 			switch (str) {
 				case "": return
@@ -65,17 +66,10 @@ export class Emulator {
 					return;
 				case "res": case "restart":
 					this.cpu.reset();
+					this.run();
 					return;
 				case "run":
-					debugCPUStats(this.cpu.getCpuStatus());
-					cnt = 0;
-					while (true) {
-						this.cpu.nextInstruction();
-						if (cnt % FAST_CONSOLE_CYCLE === 0) updateDebugCPUStats(this.cpu.getCpuStatus());
-						cnt++;
-						if (this.checkBreakpoints(this.cpu.getCurrentAddress())) break;
-					}
-					updateDebugCPUStats(this.cpu.getCpuStatus());
+					this.run();
 					return;
 				case "ni": case "next instruction":
 					this.cpu.nextInstruction();
@@ -86,7 +80,7 @@ export class Emulator {
 					cnt = 0;
 					do {
 						this.cpu.nextInstruction();
-						if (cnt % FAST_CONSOLE_CYCLE === 0) updateDebugCPUStats(this.cpu.getCpuStatus());
+						if (cnt % SLOW_CONSOLE_CYCLE === 0) updateDebugCPUStats(this.cpu.getCpuStatus());
 						cnt++;
 						if (this.checkBreakpoints(this.cpu.getCurrentAddress())) break;
 					} while (!jumps.includes(this.cpu.getCurrentInstruction()));
@@ -97,7 +91,7 @@ export class Emulator {
 					cnt = 0;
 					do {
 						this.cpu.nextInstruction();
-						if (cnt % FAST_CONSOLE_CYCLE === 0) updateDebugCPUStats(this.cpu.getCpuStatus());
+						if (cnt % SLOW_CONSOLE_CYCLE === 0) updateDebugCPUStats(this.cpu.getCpuStatus());
 						cnt++;
 						if (this.checkBreakpoints(this.cpu.getCurrentAddress())) break;
 					} while (this.cpu.getCurrentInstruction() !== "ret");
@@ -112,6 +106,7 @@ export class Emulator {
 					
 			}
 		} catch (e) {
+			updateDebugCPUStats(this.cpu.getCpuStatus());
 			console.log(("\n" + e).red);
 			return;
 		}
@@ -140,6 +135,19 @@ export class Emulator {
 
 	}
 
+	run() {
+		debugCPUStats(this.cpu.getCpuStatus());
+		let cnt = 0;
+		while (true) {
+			this.cpu.nextInstruction();
+			if (cnt % FAST_CONSOLE_CYCLE === 0) updateDebugCPUStats(this.cpu.getCpuStatus());
+			cnt++;
+			if (this.checkBreakpoints(this.cpu.getCurrentAddress())) break;
+		}
+		updateDebugCPUStats(this.cpu.getCpuStatus());
+		return;
+	}
+
 	watch(memory: "e" | "i", str: string) {
 		let argv = str.split(" ");
 		let address = Number(argv[argv.length - 2]);
@@ -148,32 +156,33 @@ export class Emulator {
 		if (this.numberGuard(length, "The length must be a number")) return;
 		console.clear();
 		let mem = memory === "e" ? this.memoryController.getFullMemory() : this.cpu.getFullMemory();
-		process.stdout.write("\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\t\tAscii\n");
-		process.stdout.write("────────────────────────────────────────────────────────────────────────────────\n".green);
+		memHex(mem, address, address + length);
+		// process.stdout.write("\t00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\t\tAscii\n");
+		// process.stdout.write("────────────────────────────────────────────────────────────────────────────────\n".green);
 
-		mem = mem.subarray(address, address + length);
+		// mem = mem.subarray(address, address + length);
 
-		for (let i = 0; i < mem.length; i += 16) {
-			process.stdout.write(("0x" + (address + i).toString(16).toUpperCase().padStart(4, "0")).yellow + "\t");
-			for (let j = 0; j < 16; j++) {
-				if (mem[i + j] === undefined) {
-					process.stdout.write("   ");
-					continue;
-				}
-				process.stdout.write(mem[i + j].toString(16).toUpperCase().padStart(2, "0") + " ");
-			}
-			process.stdout.write("\t")
-			for (let j = 0; j < 16; j++) {
-				let ascii = String.fromCharCode(mem[i + j]).match(/^[\d\w]$/i);
-				if (ascii === null) {
-					process.stdout.write(".".gray);
-					continue;
-				}
-				process.stdout.write(ascii[0]);
+		// for (let i = 0; i < mem.length; i += 16) {
+		// 	process.stdout.write(("0x" + (address + i).toString(16).toUpperCase().padStart(4, "0")).yellow + "\t");
+		// 	for (let j = 0; j < 16; j++) {
+		// 		if (mem[i + j] === undefined) {
+		// 			process.stdout.write("   ");
+		// 			continue;
+		// 		}
+		// 		process.stdout.write(mem[i + j].toString(16).toUpperCase().padStart(2, "0") + " ");
+		// 	}
+		// 	process.stdout.write("\t")
+		// 	for (let j = 0; j < 16; j++) {
+		// 		let ascii = String.fromCharCode(mem[i + j]).match(/^[\d\w]$/i);
+		// 		if (ascii === null) {
+		// 			process.stdout.write(".".gray);
+		// 			continue;
+		// 		}
+		// 		process.stdout.write(ascii[0]);
 
-			}
-			process.stdout.write("\n")
-		}
+		// 	}
+		// 	process.stdout.write("\n")
+		// }
 
 	}
 

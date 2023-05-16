@@ -74,6 +74,10 @@ export class ExternalMemoryController {
 		this.memory[address] = data;
 		if (address === EMEM_VIDEO_DATA) {
 			this.gpu.write(data, this.lastGPUmode);
+			return;
+		}
+		if (address === EMEM_VIDEO_MODE) {
+			this.lastGPUmode = data;
 		}
 	}
 }

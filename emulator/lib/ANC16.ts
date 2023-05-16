@@ -249,6 +249,7 @@ export class ANC16 {
 	}
 
 	private spOORguard() {
+		if (this.sr.getS()) return false;
 		if (this.sp.get() < this.imli.get() || this.sp.get() >= this.imhi.get()) {
 			this.spOutOfRange();
 			return true;
@@ -807,9 +808,9 @@ export class ANC16 {
 			case "implied":
 				this.iMem[this.sp.get()] = this.sr.get();
 				this.sp.add(1);
-				this.iMem[this.sp.get()] = getHigh(add16bits(this.pc.get(), 5).result);
+				this.iMem[this.sp.get()] = getHigh(add16bits(this.pc.get(), 4).result);
 				this.sp.add(1);
-				this.iMem[this.sp.get()] = getLow(add16bits(this.pc.get(), 5).result);
+				this.iMem[this.sp.get()] = getLow(add16bits(this.pc.get(), 4).result);
 				this.sp.add(1);
 				return;
 			default:
@@ -1195,7 +1196,9 @@ export class ANC16 {
 			emhi: this.emhi.toHexString(),
 			ar: this.ar.toHexString(),
 
-			currentInstruction: this.currentInstruction
+			currentInstruction: this.currentInstruction,
+
+			iMem: this.iMem
 		}
 
 		return cpuStatus;

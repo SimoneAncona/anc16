@@ -251,6 +251,8 @@ export function debugCPUStats(cpuStatus: CPUStatus) {
 		process.stdout.write(" ".bgBlue);
 
 	writeRegister(cpuStatus, width, compressed);
+	writeStack(cpuStatus, process.stdout.columns, compressed);
+	process.stdout.cursorTo(0, compressed ? 12 : 17);
 }
 
 function writeRegister(cpuStatus: CPUStatus, width: number, compressed: boolean) {
@@ -327,7 +329,74 @@ function writeRegister(cpuStatus: CPUStatus, width: number, compressed: boolean)
 	process.stdout.write(cpuStatus.emhi);
 }
 
-export function updateDebugCPUStats(cpuStatus: CPUStatus) {
+export function memHex(mem: Uint8Array, addressFrom: number, addressTo: number, columns = 16, ascii = true, cursorX = 0, cursorY = 0) {
+	process.stdout.cursorTo(cursorX, cursorY);
+	process.stdout.write("        ");
+	for (let i = 0; i < columns; i++) process.stdout.write(i.toString(16).toUpperCase().padStart(2, "0") + " ");
+	if (ascii) process.stdout.write("        Ascii");
+	process.stdout.cursorTo(cursorX, ++cursorY);
+	process.stdout.write("───────".green);
+	for (let i = 0; i < columns; i++) process.stdout.write("───".green);
+	if (ascii) {
+		process.stdout.write("─────────".green);
+		for (let i = 0; i < columns; i++) process.stdout.write("─".green);
+	}
+	process.stdout.cursorTo(cursorX, ++cursorY);
+
+	mem = mem.subarray(addressFrom, addressTo);
+
+	for (let i = 0; i < mem.length; i += columns) {
+		process.stdout.write(("0x" + (addressFrom + i).toString(16).toUpperCase().padStart(4, "0")).yellow + "  ");
+		for (let j = 0; j < columns; j++) {
+			if (mem[i + j] === undefined) {
+				process.stdout.write("   ");
+				continue;
+			}
+			process.stdout.write(mem[i + j].toString(16).toUpperCase().padStart(2, "0") + " ");
+		}
+		process.stdout.write("        ");
+		for (let j = 0; j < columns; j++) {
+			if (mem[i + j] === undefined) break;
+			let ascii = String.fromCharCode(mem[i + j]).match(/^[\d\w]$/i);
+			if (ascii === null) {
+				process.stdout.write(".".gray);
+				continue;
+			}
+			process.stdout.write(ascii[0]);
+
+		}
+		process.stdout.cursorTo(cursorX, ++cursorY);
+	}
+
+}
+
+function writeStack(cpuStatus: CPUStatus, width: number, compressed: boolean) {
+	process.stdout.cursorTo(width / 2 + 1, 1);
+	let sp = Number(cpuStatus.sp);
+	let imli = Number(cpuStatus.imli);
+	let sys = cpuStatus.sr.includes("s");
+
+	if (sp < imli && sys || sp === 0) {
+		process.stdout.write("Cannot read the stack".red);
+		return;
+	}
+	memHex(
+		cpuStatus.iMem,
+		compressed ?
+			sp - 8 < imli ? imli : sp - 8
+			: sp - 13 < imli ? imli : sp - 13,
+		sp,
+		8,
+		false,
+		width / 2 + 1,
+		1
+	);
+
+}
+
+export async function updateDebugCPUStats(cpuStatus: CPUStatus) {
 	const compressed = process.stdout.rows < 20;
 	writeRegister(cpuStatus, process.stdout.columns, compressed);
+	writeStack(cpuStatus, process.stdout.columns, compressed);
+	process.stdout.cursorTo(0, compressed ? 12 : 16);
 }
