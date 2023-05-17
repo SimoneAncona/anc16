@@ -12,14 +12,14 @@ type LocalErrorType = {
 
 export const
 	FILE_NOT_FOUND: LocalErrorType = { name: "FileNotFound", code: 0x0000 },
-	FILE_ALREDY_EXIST: LocalErrorType = { name: "FileAlreadyExist", code: 0x0100 },
+	FILE_ALREADY_EXIST: LocalErrorType = { name: "FileAlreadyExist", code: 0x0100 },
 	UNRECOGNIZED_TOKEN: LocalErrorType = { name: "SyntaxError", code: 0x0200 },
 	INVALID_IDENTIFIER: LocalErrorType = { name: "SyntaxError", code: 0x0201 },
 	GENERIC_SYNTAX_ERROR: LocalErrorType = { name: "SyntaxError", code: 0x0202 },
 	UNEXPECTED_END_OF_LINE: LocalErrorType = { name: "SyntaxError", code: 0x0203 },
 	UNEXPECTED_TOKEN: LocalErrorType = { name: "SyntaxError", code: 0x0204 },
 	INDENTATION_ERROR: LocalErrorType = { name: "SyntaxError", code: 0x0205 },
-	REDEFINITON: LocalErrorType = { name: "SymbolError", code: 0x0300 },
+	REDEFINITION: LocalErrorType = { name: "SymbolError", code: 0x0300 },
 	SYMBOL_NOT_DEFINED: LocalErrorType = { name: "SymbolError", code: 0x0301 },
 	LOCAL_SYMBOL_ACCESS: LocalErrorType = { name: "SymbolError", code: 0x0302 },
 	$_REFERENCE_TO_NULL: LocalErrorType = { name: "ReferenceError", code: 0x0400 },

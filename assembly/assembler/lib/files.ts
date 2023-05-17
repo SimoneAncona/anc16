@@ -47,7 +47,7 @@ export function write(fileName: string, buff: Uint8Array): void {
 			fs.writeFileSync(fileName, buff, { flag: "wx" });
 	} catch {
 		const err: localError.Error = {
-			type: localError.FILE_ALREDY_EXIST,
+			type: localError.FILE_ALREADY_EXIST,
 			message: "The file or the directory '" + fileName + "' already exist",
 			otherInfo: false
 		};
